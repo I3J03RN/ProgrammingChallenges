@@ -3,24 +3,25 @@
 #include <iostream>
 #include <queue>
 
-#define getIndex(x) x - 'A'
+#define getIndex(x) (x - 'A')
+#define getId(x) (char)(x + 'A')
 
 using namespace std;
 
 struct Planet {
-    char id;
+    uint8_t index;
     bool end;
-    float value;
+    double value;
     forward_list<Planet*> dests;
 };
 
 ostream& operator<<(ostream& os, const Planet& planet) {
     string dests = "";
     for (Planet* p : planet.dests) {
-        dests += p->id;
+        dests += getId(p->index);
         dests += ", ";
     }
-    os << "Planet: " << planet.id << ", value: " << planet.value
+    os << "Planet: " << getId(planet.index) << ", value: " << planet.value
        << ", end: " << planet.end << ", dests: " << dests;
     return os;
 }
@@ -30,14 +31,14 @@ uint32_t findEnd(Planet& planet) {
     queue<Planet*> bfsqueue;
     Planet* current = nullptr;
     bfsqueue.push(&planet);
-    visited[getIndex(planet.id)] = 1;
+    visited[planet.index] = 1;
     while (!bfsqueue.empty()) {
         current = bfsqueue.front();
         bfsqueue.pop();
-        if (current->end) return visited[getIndex(current->id)];
+        if (current->end) return visited[current->index];
         for (Planet* p : current->dests) {
-            if (visited[getIndex(p->id)] == 0) {
-                visited[getIndex(p->id)] = visited[getIndex(current->id)] + 1;
+            if (visited[p->index] == 0) {
+                visited[p->index] = visited[current->index] + 1;
                 bfsqueue.push(p);
             }
         }
@@ -47,8 +48,8 @@ uint32_t findEnd(Planet& planet) {
 
 int main() {
     Planet planets[26];
-    for (char c = 'A'; c <= 'Z'; c++) {
-        planets[getIndex(c)].id = c;
+    for (char c = 0; c < 26; ++c) {
+        planets[(uint32_t)c].index = c;
     }
     uint32_t n;
     while (cin >> n) {
@@ -60,7 +61,7 @@ int main() {
             cmp);
         while (n--) {
             char identifier;
-            float value;
+            double value;
             string dests;
             cin >> identifier >> value >> dests;
             Planet* planet = planets + getIndex(identifier);
@@ -80,19 +81,19 @@ int main() {
         // cout << "max: " << *prioQueue.top() << "\n";
         Planet* maxPlanet = prioQueue.top();
         prioQueue.pop();
-        float maxValue = pow(maxPlanet->value, findEnd(*maxPlanet));
+        double maxValue = maxPlanet->value * pow(.95, findEnd(*maxPlanet));
         while (!prioQueue.empty()) {
             Planet* p = prioQueue.top();
             prioQueue.pop();
             uint32_t hops = findEnd(*p);
-            float newValue = pow(p->value, hops);
+            double newValue = p->value * pow(.95, hops);
             if (newValue > maxValue) {
                 maxValue = newValue;
                 maxPlanet = p;
             }
             if (maxValue > prioQueue.top()->value) break;
         }
-        cout << maxPlanet->id << "\n";
+        cout << "Import from " << getId(maxPlanet->index) << "\n";
     }
     return 0;
 }
