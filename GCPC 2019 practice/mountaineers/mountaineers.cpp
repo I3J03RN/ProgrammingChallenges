@@ -1,89 +1,56 @@
-#include <deque>
-#include <forward_list>
+#include <algorithm>
 #include <iostream>
-#include <set>
-#include <utility>
 
 using namespace std;
 
 int rows, columns;
 
 int** mountain = nullptr;
+int** a = nullptr;
+int** b = nullptr;
 
 int numHeights = 0;
 
-int* heights = nullptr;
-
-bool reachable(int startx, int starty, int endx, int endy, int maxH) {
-    if (mountain[startx][starty] > maxH || mountain[endx][endy] > maxH)
-        return false;
-    deque<pair<int, int>> queue;
-    forward_list<pair<int, int>> visited;
-    queue.push_back({startx, starty});
-    visited.push_front({startx, starty});
-    mountain[startx][starty] *= -1;
-    bool found = false;
-    while (!queue.empty()) {
-        auto current = queue.front();
-        queue.pop_front();
-
-        if (current.first == endx && current.second == endy) {
-            found = true;
-            break;
-        }
-
-        if (current.first > 0) {
-            if (mountain[current.first - 1][current.second] > 0 &&
-                mountain[current.first - 1][current.second] <= maxH) {
-                queue.push_back({current.first - 1, current.second});
-                visited.push_front({current.first - 1, current.second});
-                mountain[current.first - 1][current.second] *= -1;
-            }
-        }
-        if (current.first < rows - 1) {
-            if (mountain[current.first + 1][current.second] > 0 &&
-                mountain[current.first + 1][current.second] <= maxH) {
-                queue.push_back({current.first + 1, current.second});
-                visited.push_front({current.first + 1, current.second});
-                mountain[current.first + 1][current.second] *= -1;
-            }
-        }
-        if (current.second > 0) {
-            if (mountain[current.first][current.second - 1] > 0 &&
-                mountain[current.first][current.second - 1] <= maxH) {
-                queue.push_back({current.first, current.second - 1});
-                visited.push_front({current.first, current.second - 1});
-                mountain[current.first][current.second - 1] *= -1;
-            }
-        }
-        if (current.second < columns - 1) {
-            if (mountain[current.first][current.second + 1] > 0 &&
-                mountain[current.first][current.second + 1] <= maxH) {
-                queue.push_back({current.first, current.second + 1});
-                visited.push_front({current.first, current.second + 1});
-                mountain[current.first][current.second + 1] *= -1;
-            }
-        }
-    }
-    for (auto i : visited) {
-        mountain[i.first][i.second] *= -1;
-    }
-    return found;
-}
-
 int solve(int startx, int starty, int endx, int endy) {
-    int l = 0, r = numHeights - 1;
-    while (l != r) {
-        // cout << l << ", " << r << "\n";
-        int mid = (r + l) / 2;
-        // cout << mid << endl;
-        if (reachable(startx, starty, endx, endy, heights[mid])) {
-            r = mid;
-        } else {
-            l = mid + 1;
+    for (int i = 0; i < rows; ++i) {
+        for (int c = 0; c < columns; ++c) {
+            a[i][c] = -1;
         }
     }
-    return heights[l];
+
+    // init
+    a[startx][starty] = mountain[startx][starty];
+
+    while (true) {
+        bool change = false;
+        for (int r = 0; r < rows; ++r) {
+            for (int c = 0; c < columns; ++c) {
+                int candidates[5];
+                candidates[0] = a[r][c];
+                candidates[1] = r > 0 ? a[r - 1][c] : -1;
+                candidates[2] = r + 1 < rows ? a[r + 1][c] : -1;
+                candidates[3] = c > 0 ? a[r][c - 1] : -1;
+                candidates[4] = c + 1 < columns ? a[r][c + 1] : -1;
+
+                int realmin = -1;
+                for (int i = 0; i < 5; ++i) {
+                    if (candidates[i] > 0) {
+                        realmin = realmin == -1 ? candidates[i]
+                                                : min(realmin, candidates[i]);
+                    }
+                }
+                if (realmin != -1) realmin = max(mountain[r][c], realmin);
+                b[r][c] = realmin;
+                if (realmin != a[r][c]) change = true;
+            }
+        }
+
+        swap(a, b);
+
+        if (!change) break;
+    }
+
+    return a[endx][endy];
 }
 
 int main() {
@@ -92,30 +59,21 @@ int main() {
     cin >> rows >> columns >> q;
 
     mountain = new int*[rows];
+    a = new int*[rows];
+    b = new int*[rows];
     for (int i = 0; i < rows; ++i) {
         mountain[i] = new int[columns];
+        a[i] = new int[columns];
+        b[i] = new int[columns];
     }
-
-    set<int> hs;
 
     for (int r = 0; r < rows; ++r) {
         for (int c = 0; c < columns; ++c) {
             int f;
             cin >> f;
             mountain[r][c] = f;
-            auto p = hs.insert(f);
-            if (p.second) numHeights++;
         }
     }
-
-    int index = 0;
-    heights = new int[numHeights];
-    for (int i : hs) {
-        heights[index++] = i;
-        // cout << i << endl;
-    }
-
-    // cout << "-------------------------------\n";
 
     while (q--) {
         int startx, starty, endx, endy;
@@ -125,9 +83,12 @@ int main() {
 
     for (int i = 0; i < rows; ++i) {
         delete[] mountain[i];
+        delete[] a[i];
+        delete[] b[i];
     }
+    delete[] a;
+    delete[] b;
     delete[] mountain;
-    delete[] heights;
 
     return 0;
 }

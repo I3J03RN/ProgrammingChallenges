@@ -1,7 +1,7 @@
 from random import randrange
 
-m = randrange(10)
-n = randrange(10)
+m = 300  # randrange(1, 10)
+n = 300  # randrange(1, 10)
 q = 5
 
 print(m, n, q)
