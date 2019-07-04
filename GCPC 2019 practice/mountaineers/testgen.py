@@ -1,13 +1,13 @@
 from random import randrange
 
-m = randrange(10)
-n = randrange(10)
-q = 5
+m = 500  # randrange(10)
+n = 500  # randrange(10)
+q = 1000
 
 print(m, n, q)
 for i in range(m):
     for j in range(n):
-        print(randrange(1, 20), end=" ")
+        print(randrange(1, 1000000), end=" ")
     print()
 
 for i in range(q):
