@@ -79,7 +79,7 @@ ostream& operator<<(ostream& out, const vertex& v) {
     return out;
 }
 
-uint setAugmentPath(vector<vertex>& vertices, vertex& start, vertex& end) {
+uint setAugmentPath(vertex& start, vertex& end) {
     vertex* current = &end;
     uint minValue = end.pred->startVertex == current
                         ? end.pred->flow
@@ -94,6 +94,7 @@ uint setAugmentPath(vector<vertex>& vertices, vertex& start, vertex& end) {
             current = current->pred->startVertex;
         }
     }
+
     current = &end;
     while (current != &start) {
         if (current->pred->startVertex == current) {
@@ -108,12 +109,8 @@ uint setAugmentPath(vector<vertex>& vertices, vertex& start, vertex& end) {
     return minValue;
 }
 
-uint augment(vector<vertex>& vertices, vertex& start, vertex& end) {
+uint augment(vertex& start, vertex& end) {
     edge dummy = {1337, nullptr, nullptr};
-
-    for (vertex& v : vertices) {
-        v.pred = nullptr;
-    }
 
     queue<vertex*> q;
     q.push(&start);
@@ -125,7 +122,7 @@ uint augment(vector<vertex>& vertices, vertex& start, vertex& end) {
             if (e->endVertex->pred == nullptr && e->capacity > e->flow) {
                 if (e->endVertex == &end) {
                     end.pred = e;
-                    return setAugmentPath(vertices, start, end);
+                    return setAugmentPath(start, end);
                 } else {
                     q.push(e->endVertex);
                     e->endVertex->pred = e;
@@ -136,7 +133,7 @@ uint augment(vector<vertex>& vertices, vertex& start, vertex& end) {
             if (e->startVertex->pred == nullptr && e->flow > 0) {
                 if (e->startVertex == &end) {
                     end.pred = e;
-                    return setAugmentPath(vertices, start, end);
+                    return setAugmentPath(start, end);
                 } else {
                     q.push(e->startVertex);
                     e->startVertex->pred = e;
@@ -150,11 +147,14 @@ uint augment(vector<vertex>& vertices, vertex& start, vertex& end) {
 
 uint maxFlow(vector<vertex>& vertices, vertex& start, vertex& end) {
     uint maxFlowValue = 0;
-    uint augmentingValue = augment(vertices, start, end);
+    uint augmentingValue = augment(start, end);
 
     while (augmentingValue > 0) {
+        for (vertex& v : vertices) {
+            v.pred = nullptr;
+        }
         maxFlowValue += augmentingValue;
-        augmentingValue = augment(vertices, start, end);
+        augmentingValue = augment(start, end);
     }
 
     return maxFlowValue;
@@ -207,7 +207,7 @@ int main() {
                 bIn = (b - 2) * 3 + 1;
                 bOut = (b - 2) * 3 + 3;
             }
-            uint dummyIndex = wireOffset + 1;
+            uint dummyIndex = wireOffset + i;
 
             edges.emplace_front(cost, &vertices[aOut], &vertices[bIn]);
             edges.emplace_front(cost, &vertices[bOut], &vertices[dummyIndex]);
