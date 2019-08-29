@@ -6,18 +6,18 @@ print(n)
 print()
 
 while(n > 0):
-    rooms = randrange(10, 100)
+    rooms = randrange(1, 101)
     print(rooms)
     safeRoomsN = randrange(1, rooms + 1)
     print(safeRoomsN, end=" ")
     safeRooms = list(range(1, rooms + 1))
     shuffle(safeRooms)
     print(*safeRooms[:safeRoomsN])
-    corridors = randrange(0, 1000)
+    corridors = randrange(0, 1001)
     coors = set()
     while corridors > 0:
         a = randrange(1, rooms + 1)
-        b = randrange(a, rooms + 1)
+        b = randrange(1, rooms + 1)
         if a != b and (a, b) not in coors and (b, a) not in coors:
             coors.add((a, b))
         corridors -= 1
