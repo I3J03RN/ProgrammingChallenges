@@ -1,0 +1,10 @@
+b:            =(8)-(9)
+c:=3
+d : = 4
+a :=5
+
+PRINT a
+PRINT b
+PRINT c
+PRINT d
+PRINT e
