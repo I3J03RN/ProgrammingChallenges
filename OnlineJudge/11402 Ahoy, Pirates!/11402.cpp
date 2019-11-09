@@ -29,7 +29,7 @@ class SegmentTree {
                        build(right(p), (L + R) / 2 + 1, R);
     }
     int rmq(int p, int L, int R, int i, int j) {
-        printf("rmq (%d - %d)\n", L, R);
+        // printf("rmq (%d - %d)\n", L, R);
         if (j < L || i > R) return -1;
 
         if (nupdate[p]) update(p, L, R);
@@ -45,20 +45,15 @@ class SegmentTree {
         if (j < L || i > R) return;
 
         if (i <= L && R <= j) {
-            setUpdate(p, type);
-            printf("setUp: %d-%d, %d\n", L, R, nupdate[p]);
+            setUpdate(p, L, R, type);
+            // printf("setUp: %d-%d, %d\n", L, R, nupdate[p]);
         } else if (L != R) {
-            if (nupdate[p]) update(p, L, R);
-            setUpdate(p, DEEP);
+            setUpdate(p, L, R, DEEP);
             lazyUpdate(left(p), L, (L + R) / 2, i, j, type);
             lazyUpdate(right(p), (L + R) / 2 + 1, R, i, j, type);
         }
     }
-    void setUpdate(int p, int type) {
-        if (type == DEEP) {
-            nupdate[p] = DEEP;
-            return;
-        }
+    void setUpdate(int p, int L, int R, int type) {
         if (nupdate[p] == 0) {
             nupdate[p] = type;
         } else {
@@ -67,32 +62,43 @@ class SegmentTree {
                     nupdate[p] = 0;
                 else if (nupdate[p] == SET)
                     nupdate[p] = RESET;
-                else
+                else if (nupdate[p] == RESET)
                     nupdate[p] = SET;
+                else {
+                    // nupdate[p] == DEEP
+                    update(p, L, R);
+                    nupdate[p] = FLIP;
+                }
             } else if (type == SET)
                 nupdate[p] = SET;
-            else
+            else if (type == RESET)
                 nupdate[p] = RESET;
+            else {
+                // type == DEEP
+                if (nupdate[p]) update(p, L, R);
+                nupdate[p] = DEEP;
+            }
         }
     }
     void update(int p, int L, int R) {
         if (nupdate[p] == 0) return;
-        printf("up: %d %d\n", L, R);
+        // printf("up: %d %d\n", L, R);
 
-        if (L != R) {
-            setUpdate(left(p), nupdate[p]);
-            setUpdate(right(p), nupdate[p]);
-
-            printf("setUp: %d-%d, %d\n", L, (R + L) / 2, nupdate[left(p)]);
-            printf("setUp: %d-%d, %d\n", (R + L) / 2 + 1, R, nupdate[right(p)]);
-        }
-        if (nupdate[p] == FLIP) pi[p] = R - L + 1 - pi[p];
-        if (nupdate[p] == SET) pi[p] = R - L + 1;
-        if (nupdate[p] == RESET) pi[p] = 0;
         if (nupdate[p] == DEEP) {
             update(left(p), L, (R + L) / 2);
             update(right(p), (R + L) / 2 + 1, R);
             pi[p] = pi[left(p)] + pi[right(p)];
+        } else {
+            if (nupdate[p] == FLIP) pi[p] = R - L + 1 - pi[p];
+            if (nupdate[p] == SET) pi[p] = R - L + 1;
+            if (nupdate[p] == RESET) pi[p] = 0;
+            if (L != R) {
+                setUpdate(left(p), L, (R + L) / 2, nupdate[p]);
+                setUpdate(right(p), (R + L) / 2 + 1, R, nupdate[p]);
+                // printf("setUp: %d-%d, %d\n", L, (R + L) / 2,
+                // nupdate[left(p)]); printf("setUp: %d-%d, %d\n", (R + L) / 2 +
+                // 1, R, nupdate[right(p)]);
+            }
         }
 
         nupdate[p] = 0;
