@@ -1,4 +1,9 @@
-* TODO 12477 Good Measures of Dispersion
-Segment Tree w/ lazy updates (assignment and add)
+* TODO 407 Gears on a Board
+Time Waste problem: annoying to implement but small enough input that
 * TODO 738 A Logical Problem
 ASCII art logic gates
+* TODO 12436 Rip Van Winkle's Code
+Segment Tree w/ annoying updates
+* TODO 12477 Good Measures of Dispersion
+Segment Tree w/ lazy updates (assignment and add)
+run time should not be an issue
