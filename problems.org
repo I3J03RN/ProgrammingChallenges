@@ -1,0 +1,4 @@
+* TODO 12477 Good Measures of Dispersion
+Segment Tree w/ lazy updates (assignment and add)
+* TODO 738 A Logical Problem
+ASCII art logic gates
