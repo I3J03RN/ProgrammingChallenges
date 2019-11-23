@@ -7,3 +7,19 @@ Segment Tree w/ annoying updates
 * TODO 12477 Good Measures of Dispersion
 Segment Tree w/ lazy updates (assignment and add)
 run time should not be an issue
+* TODO 12697 Minimal Subarray Length
+find the subarray w/ minimal length of an integer array A so that its
+sum is greater or equal to integer X.  trivial for X less or equal to
+1, but gets complicated for other X.  A linear approach is needed
+since the array A may contain 500000 Elements.  Currently trying to
+make a sliding window variant work: We know every candidate subarray
+may only have positive elements at either side, because every negative
+element can be removed w/o making the sum smaller.  Further we define
+positive Elements with following negative elements such that their sum
+is less than or equal to zero as negative positive elements when its
+not the last element in the subarray.  if we have found a subarray
+which sum is greater or equal to X we have to check at least as many
+new subsubarrays as there are negative positive elements, because the
+last added element could alone be enough to fulfill the condition.
+For this step we need insights to make the run time of this checks
+constant or logarithmic.
