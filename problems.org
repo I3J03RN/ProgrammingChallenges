@@ -23,3 +23,4 @@ new subsubarrays as there are negative positive elements, because the
 last added element could alone be enough to fulfill the condition.
 For this step we need insights to make the run time of this checks
 constant or logarithmic.
+* TODO 11173 Graycodes
