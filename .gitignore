@@ -225,3 +225,6 @@ dmypy.json
 
 # Emacs specific files
 *~
+
+.ccls-cache/
+.ccls
