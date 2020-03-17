@@ -1,0 +1,2 @@
+permutations w/ repetition
+40! / (20! * 20!)

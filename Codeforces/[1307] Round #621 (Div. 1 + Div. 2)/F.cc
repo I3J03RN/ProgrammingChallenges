@@ -7,6 +7,8 @@ typedef vector<int> vi;
 typedef vector<ii> vii;
 typedef vector<vi> vvi;
 typedef vector<vii> vvii;
+typedef complex<int> ci;
+typedef complex<double> cd;
 #define fi first
 #define se second
 #define ALL(x) (x).begin(), (x).end()
@@ -16,18 +18,19 @@ typedef vector<vii> vvii;
 #define pb push_back
 #define mp make_pair
 #define mt make_tuple
+#define ge(a, b) get<(b)>((a))
 #define SZ(x) (x).size()
-#define ft front
-#define bk back
+#define ft front()
+#define bk back()
 #define ins insert
-#define MID(a, b) (a + b) / 2
+#define endl '\n'
 #define FOR(a, b, c) for (auto(a) = (b); (a) < (c); ++(a))
 #define ROF(a, b, c) for (auto(a) = (b); (a) > (c); --(a))
-#define F0R(a, b) for (auto(a) = 0; (a) < (b); ++(a))
-#define R0F(a, b) for (auto(a) = (b); (a) >= 0; --(a))
+#define F0R(a, b) FOR ((a), 0, (b))
+#define R0F(a, b) ROF ((a), (b), -1)
 #define FORI(a, b) for (auto(a) = (b).begin(); (a) != (b).end(); ++(a))
 #define ROFI(a, b) for (auto(a) = (b).rbegin(); (a) != (b).rend(); ++(a))
-#define TRAV(a, b) for (auto&(a) : (b))
+#define CEIL(a, b) ((a) + (b)-1) / (b)
 const int xd[4] = {0, 1, 0, -1}, yd[4] = {1, 0, -1, 0};
 template <typename t>
 bool ckmin(t& a, const t& b) {
@@ -37,8 +40,6 @@ template <typename t>
 bool ckmax(t& a, const t& b) {
     return a < b ? a = b, true : false;
 }
-
-typedef tuple<int, int, double> iid;
 
 class unionFind {
    public:
@@ -54,6 +55,8 @@ class unionFind {
         return root;
     }
     void join(int a, int b) {
+        a = find(a);
+        b = find(b);
         if (data[a] < data[b]) {
             data[a] += data[b];
             data[b] = a;
@@ -66,49 +69,46 @@ class unionFind {
     int size() { return _size; }
 
    private:
-    int _size;
     vi data;
+    int _size;
 };
 
 int main() {
     ios_base::sync_with_stdio(0);
     cin.tie(0);
 
-    int tc;
-    cin >> tc;
+    int n, k, r;
+    cin >> n >> k >> r;
 
-    while (tc--) {
-        int numRevTrans;
-        cin >> numRevTrans;
-        vii sensors;
-        while (1) {
-            int x, y;
-            cin >> x;
-            if (x == -1) break;
-            cin >> y;
-            sensors.eb(x, y);
-        }
-        vector<iid> edges;
-        edges.reserve(SZ(sensors) * (SZ(sensors) - 1) / 2);
-        F0R (a, SZ(sensors))
-            FOR (b, a + 1, SZ(sensors)) {
-                double dx = sensors[a].fi - sensors[b].fi;
-                double dy = sensors[a].se - sensors[b].se;
-                edges.eb(a, b, dx * dx + dy * dy);
-            }
-
-        sort(ALL(edges),
-             [](iid& a, iid& b) -> bool { return get<2>(a) < get<2>(b); });
-
-        unionFind uf(SZ(sensors));
-        F0R (i, SZ(edges)) {
-            int a = uf.find(get<0>(edges[i]));
-            int b = uf.find(get<1>(edges[i]));
-            if (a != b) {
-                uf.join(a, b);
-                if (uf.size() <= numRevTrans) {
-                    cout << (int)ceil(sqrt(get<2>(edges[i]))) << endl;
-                    break;
+    vvi adj(n);
+    FOR (i, 1, n) {
+        int a, b;
+        cin >> a >> b;
+        a--, b--;
+        adj[a].pb(b);
+        adj[b].pb(a);
+    }
+    vi restStops;
+    restStops.reserve(r);
+    while (r--) {
+        int i;
+        cin >> i;
+        restStops.pb(i - 1);
+    }
+    unionFind uf(n);
+    vector<bool> visited(n, false);
+    queue<ii> q;
+    for (int rs : restStops) {
+        visited[rs] = true;
+        q.push(mp(rs, k));
+    }
+    while (!q.empty()) {
+        auto [v, d] = q.ft;
+        q.pop();
+        if (d > 0) {
+            for (int u : adj[v]) {
+                uf.join(u, v);
+                if (!visited[u]) {
                 }
             }
         }

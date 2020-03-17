@@ -10,5 +10,10 @@ typedef vector<vii> vvii;
 #define FORI(a, b) for (auto(a) = (b).begin(); (a) != (b).end(); ++(a))
 
 int main() {
-    ?
+  ll sum = 0;
+  ll t;
+  while (scanf("%lld", &t) != EOF)
+    sum += t / 3 - 2;
+
+  printf("%lld", sum);
 }
