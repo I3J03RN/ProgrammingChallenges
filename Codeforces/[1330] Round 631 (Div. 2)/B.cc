@@ -41,58 +41,47 @@ bool ckmax(t& a, const t& b) {
     return a < b ? a = b, true : false;
 }
 
-int l[2010], s[2010], c[4020];
-int dp[4020][2010];
-
-constexpr int impossible = 0x80808080;
-
 int main() {
     ios_base::sync_with_stdio(0);
     cin.tie(0);
 
-    int n, m;
-    cin >> n >> m;
-    F0R (i, n)
-        cin >> l[i];
-    F0R (i, n)
-        cin >> s[i];
-    FOR (i, 1, n + m + 1)
-        cin >> c[i];
-
-    vi candidates(n);
-    iota(RALL(candidates), 0);
-    // sort(RALL(candidates), [&](int a, int b) { return l[a] < l[b]; });
-    memset(dp, 0x80, sizeof(dp));
-
-    FOR (i, 1, n + m + 1)
-        dp[i][0] = 0;
-
-    for (int candidate : candidates) {
-        R0F (count, n - 1) {
-            int init = l[candidate];
-            if (dp[init][count] != impossible)
-                ckmax(dp[init][count + 1],
-                      dp[init][count] + c[init] - s[candidate]);
-            for (int lvl = init, cnt = count + 1; cnt > 1; cnt >>= 1, ++lvl) {
-                if (dp[lvl][cnt] != impossible)
-                    ckmax(dp[lvl + 1][cnt >> 1],
-                          dp[lvl][cnt] + (cnt >> 1) * c[lvl + 1]);
+    int tcs;
+    cin >> tcs;
+    while (tcs--) {
+        int n;
+        cin >> n;
+        vi a(n);
+        F0R (i, n)
+            cin >> a[i];
+        vector<bool> validL(n), validR(n);
+        vector<bool> seen(n, false);
+        for (int i = 0, m = 0, cnt = 0; i < n; ++i) {
+            ckmax(m, a[i]);
+            if (!seen[a[i]]) {
+                seen[a[i]] = true;
+                ++cnt;
             }
+            validL[i] = i + 1 == m && i + 1 == cnt;
         }
+        seen.assign(n, false);
+        for (int i = n - 1, m = 0, cnt = 0; ~i; --i) {
+            ckmax(m, a[i]);
+            if (!seen[a[i]]) {
+                seen[a[i]] = true;
+                ++cnt;
+            }
+            validR[i] = n - i == m && n - i == cnt;
+        }
+        // cout << "validL:" << endl;
+        // for (bool b : validL) cout << b << endl;
+        // cout << "validR:" << endl;
+        // for (bool b : validR) cout << b << endl;
+        vii sols;
+        for (int i = 0; i < n - 1; ++i)
+            if (validL[i] && validR[i + 1]) sols.eb(i + 1, n - i - 1);
+        cout << SZ(sols) << endl;
+        for (auto [l1, l2] : sols) cout << l1 << ' ' << l2 << endl;
     }
-
-    int best = 0;
-    FOR (i, 1, n + m + 1)
-        FOR (j, 1, n + 1)
-            ckmax(best, dp[i][j]);
-
-    FOR (i, 1, n + m + 1) {
-        cout << setw(3) << i << ": ";
-        F0R (j, n + 1)
-            cout << setw(15) << dp[i][j];
-        cout << endl;
-    }
-    cout << best << endl;
 
     return 0;
 }

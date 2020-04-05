@@ -41,58 +41,32 @@ bool ckmax(t& a, const t& b) {
     return a < b ? a = b, true : false;
 }
 
-int l[2010], s[2010], c[4020];
-int dp[4020][2010];
-
-constexpr int impossible = 0x80808080;
-
 int main() {
     ios_base::sync_with_stdio(0);
     cin.tie(0);
 
-    int n, m;
-    cin >> n >> m;
-    F0R (i, n)
-        cin >> l[i];
-    F0R (i, n)
-        cin >> s[i];
-    FOR (i, 1, n + m + 1)
-        cin >> c[i];
-
-    vi candidates(n);
-    iota(RALL(candidates), 0);
-    // sort(RALL(candidates), [&](int a, int b) { return l[a] < l[b]; });
-    memset(dp, 0x80, sizeof(dp));
-
-    FOR (i, 1, n + m + 1)
-        dp[i][0] = 0;
-
-    for (int candidate : candidates) {
-        R0F (count, n - 1) {
-            int init = l[candidate];
-            if (dp[init][count] != impossible)
-                ckmax(dp[init][count + 1],
-                      dp[init][count] + c[init] - s[candidate]);
-            for (int lvl = init, cnt = count + 1; cnt > 1; cnt >>= 1, ++lvl) {
-                if (dp[lvl][cnt] != impossible)
-                    ckmax(dp[lvl + 1][cnt >> 1],
-                          dp[lvl][cnt] + (cnt >> 1) * c[lvl + 1]);
+    int tcs;
+    cin >> tcs;
+    FOR (tc, 1, tcs + 1) {
+        int n, k, p;
+        cin >> n >> k >> p;
+        vvi stacks(n, vi(k + 1, 0));
+        F0R (i, n)
+            F0R (j, k) {
+                cin >> stacks[i][j + 1];
+                stacks[i][j + 1] += stacks[i][j];
             }
-        }
-    }
 
-    int best = 0;
-    FOR (i, 1, n + m + 1)
-        FOR (j, 1, n + 1)
-            ckmax(best, dp[i][j]);
+        vvi dp(p + 1, vi(n));
+        F0R (i, n)
+            dp[0][i] = 0;
+        FOR (i, 1, p + 1)
+            F0R (j, n)
+                F0R (pt, min(i, k) + 1)
+                    ckmax(dp[i][j], dp[i - pt][j - 1] + stacks[j][pt]);
 
-    FOR (i, 1, n + m + 1) {
-        cout << setw(3) << i << ": ";
-        F0R (j, n + 1)
-            cout << setw(15) << dp[i][j];
-        cout << endl;
+        cout << "Case #" << tc << ": " << dp[p][n - 1] << endl;
     }
-    cout << best << endl;
 
     return 0;
 }

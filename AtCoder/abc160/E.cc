@@ -41,58 +41,48 @@ bool ckmax(t& a, const t& b) {
     return a < b ? a = b, true : false;
 }
 
-int l[2010], s[2010], c[4020];
-int dp[4020][2010];
-
-constexpr int impossible = 0x80808080;
+typedef vector<ll> vll;
 
 int main() {
     ios_base::sync_with_stdio(0);
     cin.tie(0);
 
-    int n, m;
-    cin >> n >> m;
-    F0R (i, n)
-        cin >> l[i];
-    F0R (i, n)
-        cin >> s[i];
-    FOR (i, 1, n + m + 1)
-        cin >> c[i];
+    int a, b, c, x, y;
+    cin >> x >> y >> a >> b >> c;
 
-    vi candidates(n);
-    iota(RALL(candidates), 0);
-    // sort(RALL(candidates), [&](int a, int b) { return l[a] < l[b]; });
-    memset(dp, 0x80, sizeof(dp));
+    vll p(a), q(b), r(c);
+    F0R (i, a)
+        cin >> p[i];
+    F0R (i, b)
+        cin >> q[i];
+    F0R (i, c)
+        cin >> r[i];
 
-    FOR (i, 1, n + m + 1)
-        dp[i][0] = 0;
+    sort(ALL(p));
+    sort(ALL(q));
+    sort(ALL(r));
 
-    for (int candidate : candidates) {
-        R0F (count, n - 1) {
-            int init = l[candidate];
-            if (dp[init][count] != impossible)
-                ckmax(dp[init][count + 1],
-                      dp[init][count] + c[init] - s[candidate]);
-            for (int lvl = init, cnt = count + 1; cnt > 1; cnt >>= 1, ++lvl) {
-                if (dp[lvl][cnt] != impossible)
-                    ckmax(dp[lvl + 1][cnt >> 1],
-                          dp[lvl][cnt] + (cnt >> 1) * c[lvl + 1]);
-            }
-        }
-    }
+    vll solution(x + y);
+    F0R (i, x)
+        solution[i] = p[a - x + i];
+    F0R (i, y)
+        solution[x + i] = q[b - y + i];
+    sort(ALL(solution));
+    for (int i = x + y - 2; i >= 0; --i) solution[i] += solution[i + 1];
+    for (int i = c - 2; i >= 0; --i) r[i] += r[i + 1];
+    ll sum = solution[0];
+    F0R (i, min(c, x + y))
+        ckmax(sum, r[c - i - 1] + solution[i + 1]);
 
-    int best = 0;
-    FOR (i, 1, n + m + 1)
-        FOR (j, 1, n + 1)
-            ckmax(best, dp[i][j]);
+    // for (int pc = c - 1, ps = x + y - 1, end = 0;
+    //      pc >= max(0, c - (x + y)) && end <= ps;) {
+    //     if (solution[ps] < r[pc])
+    //         sum += r[pc--] - solution[end++];
+    //     else
+    //         --ps;
+    // }
 
-    FOR (i, 1, n + m + 1) {
-        cout << setw(3) << i << ": ";
-        F0R (j, n + 1)
-            cout << setw(15) << dp[i][j];
-        cout << endl;
-    }
-    cout << best << endl;
+    cout << sum << endl;
 
     return 0;
 }

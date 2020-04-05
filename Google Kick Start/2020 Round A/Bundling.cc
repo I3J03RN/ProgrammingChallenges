@@ -41,58 +41,49 @@ bool ckmax(t& a, const t& b) {
     return a < b ? a = b, true : false;
 }
 
-int l[2010], s[2010], c[4020];
-int dp[4020][2010];
+void insert(vvi& adj, vi& num, const string& s) {
+    int node = 0;
+    for (char c : s) {
+        if (adj[node][c - 'A'] == -1) {
+            adj.eb(26, -1);
+            num.eb(0);
+            adj[node][c - 'A'] = SZ(adj) - 1;
+        }
+        node = adj[node][c - 'A'];
+        ++num[node];
+    }
+}
 
-constexpr int impossible = 0x80808080;
+ii dfs(vvi& adj, vi& num, int v, int depth, int k) {
+    int used = 0, score = 0;
+    for (int u : adj[v])
+        if (u != -1) {
+            ii p = dfs(adj, num, u, depth + 1, k);
+            used += p.fi;
+            score += p.se;
+        }
+    return mp(num[v] - (num[v] % k), score + depth * ((num[v] - used) / k));
+}
 
 int main() {
     ios_base::sync_with_stdio(0);
     cin.tie(0);
 
-    int n, m;
-    cin >> n >> m;
-    F0R (i, n)
-        cin >> l[i];
-    F0R (i, n)
-        cin >> s[i];
-    FOR (i, 1, n + m + 1)
-        cin >> c[i];
-
-    vi candidates(n);
-    iota(RALL(candidates), 0);
-    // sort(RALL(candidates), [&](int a, int b) { return l[a] < l[b]; });
-    memset(dp, 0x80, sizeof(dp));
-
-    FOR (i, 1, n + m + 1)
-        dp[i][0] = 0;
-
-    for (int candidate : candidates) {
-        R0F (count, n - 1) {
-            int init = l[candidate];
-            if (dp[init][count] != impossible)
-                ckmax(dp[init][count + 1],
-                      dp[init][count] + c[init] - s[candidate]);
-            for (int lvl = init, cnt = count + 1; cnt > 1; cnt >>= 1, ++lvl) {
-                if (dp[lvl][cnt] != impossible)
-                    ckmax(dp[lvl + 1][cnt >> 1],
-                          dp[lvl][cnt] + (cnt >> 1) * c[lvl + 1]);
-            }
+    int tcs;
+    cin >> tcs;
+    FOR (tc, 1, tcs + 1) {
+        int n, k;
+        cin >> n >> k;
+        vvi adj;
+        vi num(1, 0);
+        adj.eb(26, -1);
+        F0R (i, n) {
+            string s;
+            cin >> s;
+            insert(adj, num, s);
         }
+        cout << "Case #" << tc << ": " << dfs(adj, num, 0, 0, k).se << endl;
     }
-
-    int best = 0;
-    FOR (i, 1, n + m + 1)
-        FOR (j, 1, n + 1)
-            ckmax(best, dp[i][j]);
-
-    FOR (i, 1, n + m + 1) {
-        cout << setw(3) << i << ": ";
-        F0R (j, n + 1)
-            cout << setw(15) << dp[i][j];
-        cout << endl;
-    }
-    cout << best << endl;
 
     return 0;
 }

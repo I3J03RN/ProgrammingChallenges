@@ -41,58 +41,40 @@ bool ckmax(t& a, const t& b) {
     return a < b ? a = b, true : false;
 }
 
-int l[2010], s[2010], c[4020];
-int dp[4020][2010];
-
-constexpr int impossible = 0x80808080;
-
 int main() {
     ios_base::sync_with_stdio(0);
     cin.tie(0);
 
     int n, m;
     cin >> n >> m;
-    F0R (i, n)
+    vi l(m);
+    F0R (i, m)
         cin >> l[i];
-    F0R (i, n)
-        cin >> s[i];
-    FOR (i, 1, n + m + 1)
-        cin >> c[i];
 
-    vi candidates(n);
-    iota(RALL(candidates), 0);
-    // sort(RALL(candidates), [&](int a, int b) { return l[a] < l[b]; });
-    memset(dp, 0x80, sizeof(dp));
+    vi neededSpace(m);
+    neededSpace.bk = l.bk;
+    for (int i = m - 2; ~i; --i)
+        neededSpace[i] = max(neededSpace[i + 1] + 1, l[i]);
 
-    FOR (i, 1, n + m + 1)
-        dp[i][0] = 0;
+    // for (int i : neededSpace) cout << i << endl;
 
-    for (int candidate : candidates) {
-        R0F (count, n - 1) {
-            int init = l[candidate];
-            if (dp[init][count] != impossible)
-                ckmax(dp[init][count + 1],
-                      dp[init][count] + c[init] - s[candidate]);
-            for (int lvl = init, cnt = count + 1; cnt > 1; cnt >>= 1, ++lvl) {
-                if (dp[lvl][cnt] != impossible)
-                    ckmax(dp[lvl + 1][cnt >> 1],
-                          dp[lvl][cnt] + (cnt >> 1) * c[lvl + 1]);
-            }
-        }
+    if (neededSpace[0] > n) {
+        cout << -1 << endl;
+        return 0;
     }
 
-    int best = 0;
-    FOR (i, 1, n + m + 1)
-        FOR (j, 1, n + 1)
-            ckmax(best, dp[i][j]);
-
-    FOR (i, 1, n + m + 1) {
-        cout << setw(3) << i << ": ";
-        F0R (j, n + 1)
-            cout << setw(15) << dp[i][j];
+    vi place(m);
+    int coloredUntil = -1;
+    F0R (i, m) {
+        place[i] = min(coloredUntil + 1, n - neededSpace[i]);
+        coloredUntil = place[i] + l[i] - 1;
+        // cout << place[i] << ' ' << coloredUntil << endl;
+    }
+    if (coloredUntil == n - 1) {
+        for (int i : place) cout << i + 1 << ' ';
         cout << endl;
-    }
-    cout << best << endl;
+    } else
+        cout << -1 << endl;
 
     return 0;
 }

@@ -41,58 +41,39 @@ bool ckmax(t& a, const t& b) {
     return a < b ? a = b, true : false;
 }
 
-int l[2010], s[2010], c[4020];
-int dp[4020][2010];
-
-constexpr int impossible = 0x80808080;
-
 int main() {
     ios_base::sync_with_stdio(0);
     cin.tie(0);
 
-    int n, m;
-    cin >> n >> m;
-    F0R (i, n)
-        cin >> l[i];
-    F0R (i, n)
-        cin >> s[i];
-    FOR (i, 1, n + m + 1)
-        cin >> c[i];
-
-    vi candidates(n);
-    iota(RALL(candidates), 0);
-    // sort(RALL(candidates), [&](int a, int b) { return l[a] < l[b]; });
-    memset(dp, 0x80, sizeof(dp));
-
-    FOR (i, 1, n + m + 1)
-        dp[i][0] = 0;
-
-    for (int candidate : candidates) {
-        R0F (count, n - 1) {
-            int init = l[candidate];
-            if (dp[init][count] != impossible)
-                ckmax(dp[init][count + 1],
-                      dp[init][count] + c[init] - s[candidate]);
-            for (int lvl = init, cnt = count + 1; cnt > 1; cnt >>= 1, ++lvl) {
-                if (dp[lvl][cnt] != impossible)
-                    ckmax(dp[lvl + 1][cnt >> 1],
-                          dp[lvl][cnt] + (cnt >> 1) * c[lvl + 1]);
-            }
-        }
+    int n, k, c;
+    string s;
+    cin >> n >> k >> c >> s;
+    vi maxWorkDaysTo(n);
+    maxWorkDaysTo[0] = 0;
+    FOR (i, 1, n)
+        maxWorkDaysTo[i] = max(
+            maxWorkDaysTo[i - 1],
+            i - 1 - c >= 0 ? maxWorkDaysTo[i - 1 - c] + (s[i - 1 - c] == 'o')
+                           : 0);
+    for (int i : maxWorkDaysTo) cout << i << endl;
+    cout << "---------------" << endl;
+    vi possibleWorkDays(n);
+    possibleWorkDays[n - 1] = s[n - 1] == 'o';
+    R0F (i, n - 2) {
+        possibleWorkDays[i] = possibleWorkDays[i + 1];
+        if (s[i] == 'o')
+            ckmax(possibleWorkDays[i],
+                  (i + 1 + c < n ? possibleWorkDays[i + 1 + c] : 0) + 1);
     }
-
-    int best = 0;
-    FOR (i, 1, n + m + 1)
-        FOR (j, 1, n + 1)
-            ckmax(best, dp[i][j]);
-
-    FOR (i, 1, n + m + 1) {
-        cout << setw(3) << i << ": ";
-        F0R (j, n + 1)
-            cout << setw(15) << dp[i][j];
-        cout << endl;
+    for (int i : possibleWorkDays) {
+        cout << i << endl;
     }
-    cout << best << endl;
+    cout << "---------------" << endl;
+    F0R (i, n) {
+        if (s[i] == 'o' &&
+            maxWorkDaysTo[i] + (i + 1 == n ? 0 : possibleWorkDays[i + 1]) < k)
+            cout << i + 1 << endl;
+    }
 
     return 0;
 }

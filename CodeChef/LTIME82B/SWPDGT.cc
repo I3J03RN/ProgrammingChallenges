@@ -23,7 +23,7 @@ typedef complex<double> cd;
 #define ft front()
 #define bk back()
 #define ins insert
-#define endl '\n'
+//#define endl '\n'
 #define FOR(a, b, c) for (auto(a) = (b); (a) < (c); ++(a))
 #define ROF(a, b, c) for (auto(a) = (b); (a) > (c); --(a))
 #define F0R(a, b) FOR ((a), 0, (b))
@@ -41,58 +41,49 @@ bool ckmax(t& a, const t& b) {
     return a < b ? a = b, true : false;
 }
 
-int l[2010], s[2010], c[4020];
-int dp[4020][2010];
-
-constexpr int impossible = 0x80808080;
-
 int main() {
     ios_base::sync_with_stdio(0);
     cin.tie(0);
 
-    int n, m;
-    cin >> n >> m;
-    F0R (i, n)
-        cin >> l[i];
-    F0R (i, n)
-        cin >> s[i];
-    FOR (i, 1, n + m + 1)
-        cin >> c[i];
+    int tcs;
+    cin >> tcs;
+    while (tcs--) {
+        int a, b;
+        cin >> a >> b;
+        vi da, db;
 
-    vi candidates(n);
-    iota(RALL(candidates), 0);
-    // sort(RALL(candidates), [&](int a, int b) { return l[a] < l[b]; });
-    memset(dp, 0x80, sizeof(dp));
+        int best = a + b;
 
-    FOR (i, 1, n + m + 1)
-        dp[i][0] = 0;
+        while (a) {
+            da.pb(a % 10);
+            a /= 10;
+        }
+        while (b) {
+            db.pb(b % 10);
+            b /= 10;
+        }
 
-    for (int candidate : candidates) {
-        R0F (count, n - 1) {
-            int init = l[candidate];
-            if (dp[init][count] != impossible)
-                ckmax(dp[init][count + 1],
-                      dp[init][count] + c[init] - s[candidate]);
-            for (int lvl = init, cnt = count + 1; cnt > 1; cnt >>= 1, ++lvl) {
-                if (dp[lvl][cnt] != impossible)
-                    ckmax(dp[lvl + 1][cnt >> 1],
-                          dp[lvl][cnt] + (cnt >> 1) * c[lvl + 1]);
+        for (int i = 0; i < SZ(da); ++i) {
+            for (int j = 0; j < SZ(db); ++j) {
+                swap(da[i], db[j]);
+                int base = 1;
+                int val = 0;
+                for (int x : da) {
+                    val += base * x;
+                    base *= 10;
+                }
+                base = 1;
+                for (int x : db) {
+                    val += base * x;
+                    base *= 10;
+                }
+                ckmax(best, val);
+                swap(da[i], db[j]);
             }
         }
-    }
 
-    int best = 0;
-    FOR (i, 1, n + m + 1)
-        FOR (j, 1, n + 1)
-            ckmax(best, dp[i][j]);
-
-    FOR (i, 1, n + m + 1) {
-        cout << setw(3) << i << ": ";
-        F0R (j, n + 1)
-            cout << setw(15) << dp[i][j];
-        cout << endl;
+        cout << best << endl;
     }
-    cout << best << endl;
 
     return 0;
 }
