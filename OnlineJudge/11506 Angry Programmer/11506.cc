@@ -18,7 +18,7 @@ typedef vector<vii> vvii;
 #define SZ(x) (int)(x).size()
 #define ft front()
 #define bk back()
-#define endl '\n'
+//#define endl '\n'
 #define FOR(a, b, c) for (auto(a) = (b); (a) < (c); ++(a))
 #define ROF(a, b, c) for (auto(a) = (b); (a) > (c); --(a))
 #define F0R(a, b) FOR ((a), 0, (b))
@@ -68,27 +68,26 @@ ostream& operator<<(ostream& o, const pair<a, b>& p) {
 
 const ll inf = 10e12;
 struct edge {
-    edge(int from, int to, ll maxf)
-        : from(from), too(to), maxf(maxf), currentf(0) {}
-    int from, too;
-    ll maxf;
-    ll currentf;
-    int to(int v) { return v == from ? too : from; }
-    ll mf(int v = 0) { return maxf; }
-    ll curf(int v) { return v == from ? currentf : maxf - currentf; }
-    ll flow(int v) { return mf(v) - curf(v); }
-    void adjust(int v, ll amount) {
-        if (v == from)
-            currentf += amount;
-        else
-            currentf -= amount;
+    edge(int from, int to, ll capacity, ll flow = 0)
+        : mfrom(from), mto(to), mcapacity(capacity), mflow(flow) {}
+    int mfrom, mto;
+    ll mcapacity, mflow;
+    int other(int v) { return v == mfrom ? mto : mfrom; }
+    ll capacity(int v = 0) { return v == mfrom ? mcapacity : 0; }
+    ll flow(int v) { return v == mfrom ? mflow : -mflow; }
+    void adjust(int v, ll amount) { mflow += v == mfrom ? amount : -amount; }
+    friend ostream& operator<<(ostream& o, const edge& e) {
+        return o << e.mfrom << " -> " << e.mto << ": " << e.mflow << "/"
+                 << e.mcapacity;
     }
 };
-ostream& operator<<(ostream& o, const edge& e) {
-    return o << dvar(e.from) << dvar(e.too) << dvar(e.maxf) << dvar(e.currentf);
-}
 vector<edge> edges;
 vvi adj;
+void addEdge(int from, int to, ll cost) {
+    edges.eb(from, to, cost);
+    adj[from].pb(SZ(edges) - 1);
+    adj[to].pb(SZ(edges) - 1);
+}
 ll augment(const ll s, const ll t) {
     vii p(SZ(adj), mp(-1, -1));
     queue<ll> q;
@@ -98,24 +97,20 @@ ll augment(const ll s, const ll t) {
         ll v = q.front();
         if (v == t) break;
         q.pop();
-        for (int i : adj[v])
-            if (p[edges[i].to(v)] == mp(-1, -1) &&
-                edges[i].curf(v) < edges[i].mf(v)) {
-                p[edges[i].to(v)] = mp(v, i);
-                q.push(edges[i].to(v));
+        for (int i : adj[v]) {
+            auto& e = edges[i];
+            if (p[e.other(v)] == mp(-1, -1) && e.flow(v) < e.capacity(v)) {
+                p[e.other(v)] = mp(v, i);
+                q.push(e.other(v));
             }
+        }
     }
     if (p[t] == mp(-1, -1)) return 0;
     ll mf = inf;
     for (ii c = p[t]; c.fi != -2; c = p[c.fi])
-        ckmin(mf, edges[c.se].flow(c.fi));
+        ckmin(mf, edges[c.se].capacity(c.fi) - edges[c.se].flow(c.fi));
     for (ii c = p[t]; c.fi != -2; c = p[c.fi]) edges[c.se].adjust(c.fi, mf);
     return mf;
-}
-void addEdge(int from, int to, ll cost) {
-    edges.eb(from, to, cost);
-    adj[from].pb(SZ(edges) - 1);
-    adj[to].pb(SZ(edges) - 1);
 }
 ll maxflow(int s, int t) {
     ll maxflow = 0;
@@ -152,6 +147,5 @@ int main() {
             addEdge(out[b], in[a], cost);
         }
         cout << maxflow(in[1], out[m]) << endl;
-        // for (auto& e : edges) cout << e << endl;
     }
 }
