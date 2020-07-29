@@ -1,1 +1,0 @@
-/home/i3j03rn/ProgrammingChallenges/CompProg/template_long.cc
