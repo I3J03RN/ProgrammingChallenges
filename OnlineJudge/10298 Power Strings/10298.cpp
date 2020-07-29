@@ -1,45 +1,100 @@
-#include <cstdio>
-#include <cstring>
+#include <bits/stdc++.h>
 using namespace std;
-char text[2200000];
-char pattern[1100000];
-int back[1100000];
-int n, m;               // n = strlen(text); m = strlen(patter);
-void kmpPreprocess() {  // use this once before the search
-    for (int i = 0, j = -1; i <= m; ++i, ++j) {
-        back[i] = j;  // negative one marks the beginning
-        // backtrack until the beginning is reached or the chars are
-        // equal again
-        while (j >= 0 && pattern[i] != pattern[j]) j = back[j];
-    }
+typedef long long ll;
+typedef pair<int, int> ii;
+typedef vector<int> vi;
+typedef vector<ii> vii;
+typedef vector<vi> vvi;
+typedef vector<vii> vvii;
+#define fi first
+#define se second
+#define ALL(x) (x).begin(), (x).end()
+#define RALL(x) (x).rbegin(), (x).rend()
+#define pf push_front
+#define eb emplace_back
+#define pb push_back
+#define mp make_pair
+#define mt make_tuple
+#define SZ(x) (int)(x).size()
+#define ft front()
+#define bk back()
+#define endl '\n'
+#define FOR(a, b, c) for (auto(a) = (b); (a) < (c); ++(a))
+#define ROF(a, b, c) for (auto(a) = (b); (a) > (c); --(a))
+#define F0R(a, b) FOR ((a), 0, (b))
+#define R0F(a, b) ROF ((a), (b), -1)
+#define CEIL(a, b) ((a) + (b)-1) / (b)
+#define SET(a, b) memset((a), (b), sizeof(a))
+template <class t>
+bool ckmin(t& a, const t& b) {
+    return a > b ? a = b, true : false;
 }
-int kmpSearch() {
-    bool once = false;
-    for (int i = 0, j = 0; i <= n; i++, j++) {
-        if (j == m) {  // if j is equal to m the pattern is completely
-                       // matched
-            // printf("found match at: %d\n", i - j);
-            if (once)
-                return i - j;
-            else
-                once = true;
-            j = back[j];
-        }
-        while (j >= 0 && text[i] != pattern[j]) j = back[j];
-    }
-    return -1;
+template <class t>
+bool ckmax(t& a, const t& b) {
+    return a < b ? a = b, true : false;
 }
+#ifndef DEBUG
+#define DEBUG 0
+#endif
+#define dout \
+    if (DEBUG) std::cerr
+#define dvar(...) " [" << #__VA_ARGS__ ": " << (__VA_ARGS__) << "] "
+template <class a, class b>
+ostream& operator<<(ostream& o, const pair<a, b>& p);
+template <class T>
+struct IsC {
+    template <class C>
+    static char test(typename C::const_iterator*);
+    template <class C>
+    static int test(...);
+    static const bool value = sizeof(test<T>(0)) == sizeof(char);
+};
+template <>
+struct IsC<string> {
+    static const bool value = false;
+};
+template <class C>
+typename enable_if<IsC<C>::value, ostream&>::type operator<<(ostream& o,
+                                                             const C& c) {
+    o << '{';
+    for (auto it = c.begin(); it != c.end();)
+        o << *it << (++it != c.end() ? ", " : "}");
+    return o;
+}
+template <class a, class b>
+ostream& operator<<(ostream& o, const pair<a, b>& p) {
+    return o << '(' << p.fi << ", " << p.se << ')';
+}
+
+vi prefixFunction(string& s) {
+    vi prefix(SZ(s));
+    FOR (i, 1, SZ(s)) {
+        int j = prefix[i - 1];
+        while (j > 0 && s[i] != s[j]) j = prefix[j - 1];
+        if (s[i] == s[j]) ++j;
+        prefix[i] = j;
+    }
+    return prefix;
+}
+
 int main() {
+    ios_base::sync_with_stdio(0);
+    cin.tie(0);
+
     while (1) {
-        fgets(pattern, 1010000, stdin);
-        if (strchr(pattern, '.')) break;
-        m = strlen(pattern);
-        m--;
-        pattern[m] = 0;
-        n = m << 1;
-        strcpy(text, pattern);
-        strcat(text, pattern);
-        kmpPreprocess();
-        printf("%d\n", m / kmpSearch());
+        string s;
+        cin >> s;
+        if (s[0] == '.') break;
+        string ss = s + "#" + s + s;
+        vi prefix = prefixFunction(ss);
+        int best = -1;
+        F0R (i, SZ(s))
+            if (prefix[2 * SZ(s) + 1 + i] == SZ(s)) {
+                best = i + 1;
+                break;
+            }
+        cout << SZ(s) / best << endl;
     }
+
+    return 0;
 }

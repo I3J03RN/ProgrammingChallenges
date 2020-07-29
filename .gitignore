@@ -2,6 +2,14 @@
 o
 myo
 
+*.in
+*.out
+*.class
+*.jar
+
+[A-Z][0-9]?
+
+
 # C/C++
 # Prerequisites
 *.d

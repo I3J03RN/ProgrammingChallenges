@@ -1,0 +1,6 @@
+* Dilworth's theorem/Heavy-light decomposition
+* Halls Mariage theorem
+* König's Theorem
+* Sprague Grunge Theorem
+* closure theorem 
+* Euler cycle Hierholzer's algorithm
