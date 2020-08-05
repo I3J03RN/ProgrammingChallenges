@@ -90,15 +90,23 @@ void tprint(vector<vector<T>>& v, size_t width = 0, ostream& o = cerr) {
   }
 }
 
-vi lvl(2);
 vvi adj;
-ii dfs(int v = 0, int p = -1, int h = 0) {
+// [ use edge to me, don't use edge to me ]
+ii dfs(int v, int p = -1) {
+  int sum = 0;
+  vi ve;
   for (int u : adj[v]) {
     if (u != p) {
-      ++lvl[h & 1];
-      dfs(u, v, h + 1);
+      auto [aa, bb] = dfs(u, v);
+      ve.pb(aa - bb);
+      sum += bb;
     }
   }
+  int b = 0;
+  for (int i : ve) {
+    ckmax(b, sum + i);
+  }
+  return mp(sum + (p != -1), b);
 }
 
 int main() {
@@ -106,15 +114,26 @@ int main() {
   cout.tie(0); cin.tie(0);
 
   int n; cin >> n;
-
-  adj.resize(n);
-
+  adj.resize(n + 1);
   F0R (_, n - 1) {
-    int a, b; cin >> a >> b; --a; --b;
+    int a, b; cin >> a >> b;
     adj[a].pb(b); adj[b].pb(a);
   }
-  dfs();
-  cout << max(lvl[0], lvl[1]) << endl;
+  
+  int start = -1;
+  FOR (i, 1, n + 1) {
+    if (SZ(adj[i]) == 1) {
+      start = i;
+      break;
+    }
+  }
+  if (start == -1) {
+    cout << 0 << endl;
+    return 0;
+  }
+
+  auto [a, b] = dfs(start);
+  cout << max(a, b) << endl;
   
   return 0;
 }

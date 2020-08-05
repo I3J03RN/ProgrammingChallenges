@@ -90,127 +90,56 @@ void tprint(vector<vector<T>>& v, size_t width = 0, ostream& o = cerr) {
   }
 }
 
-struct ST {
-  using T = ll;
-  const T unit = 0;
-  T merge(T l, T r) { return l + r; };
-  int n;
-  vector<T> data;
-  ST(int n) : n(n), data(2 * n) {}
-  ST(vector<T>& v) : n(SZ(v)), data(2 * SZ(v)) {
-    copy(ALL(v), data.begin() + SZ(v));
-    build();
-  }
-  void build() {
-    for (int i = n - 1; i; --i)
-      data[i] = merge(data[i << 1], data[i << 1 | 1]);
-  }
-  T query(int l, int r) {
-    T li = unit, ri = unit;
-    for (l += n, r += n; l < r; r >>= 1, l >>= 1) {
-      if (l & 1) li = merge(li, data[l++]);
-      if (r & 1) ri = merge(data[--r], ri);
-    }
-    return merge(li, ri);
-  }
-  void update(int i, T val) {
-    for (data[i += n] = val; i > 1; i >>= 1)
-      data[i >> 1] = merge(data[i & ~1], data[i | 1]);
-  }
-};
+vvii adj;
+vi times;
 
-vi sz;
-vector<ll> val;
-vvi adj;
-vi par;
-vector<bool> heavy;
-vi stidx, pos, stsz;
-vi first;
-
-void dfssz(int v = 1, int p = -1) {
-  par[v] = p;
-  for (int u : adj[v]) {
-    if (p != u) {
-      dfssz(u, v);
-      sz[v] += sz[u];
+int dfs(int v = 1, int p = -1) {
+  int cnt = 0;
+  for (auto [u, idx] : adj[v]) {
+    if (u != p) {
+      cnt += times[idx] = dfs(u, v);
     }
   }
+  return max(1, cnt);
 }
 
-void dfs(int v = 1, int p = -1) {
-  for (int u : adj[v]) {
-    if (p != u) {
-      dfs(u, v);
-      if (sz[u] > sz[v] / 2) {
-        heavy[u] = true;
-      }
-    }
-  } 
-}
-
-void dfsBuild(int v = 1, int p = -1) {
-  if (heavy[v]) {
-    stidx[v] = stidx[p];
-    ++stsz[stidx[v]];
-    pos[v] = pos[p] + 1;
-  } else {
-    stidx[v] = SZ(stsz);
-    stsz.pb(1); first.pb(v);
-    pos[v] = 0;
-    
+void solve() {
+  int n; cin >> n; ll S; cin >> S;
+  adj.assign(n + 1, vii()); times.resize(n - 1);
+  vector<ll> ws(n - 1);
+  F0R (i, n - 1) {
+    int a, b; cin >> a >> b >> ws[i];
+    adj[a].eb(b, i); adj[b].eb(a, i);
   }
-  for (int u : adj[v]) {
-    if (p != u) {
-      dfsBuild(u, v);
+  dfs();
+  dout << dvar(times) << endl;
+  ll cur = 0;
+  set<pair<ll, int>, greater<pair<ll, int>>> q;
+  F0R (i, n - 1) {
+    cur += ws[i] * times[i];
+    q.emplace(times[i] * (ws[i] - ws[i] / 2), i);
+  }
+  int moves = 0;
+  for (; cur > S; ++moves) {
+    auto [r, i] = *q.begin(); q.erase(q.begin());
+    cur -= r;
+    ws[i] >>= 1;
+    if (times[i]) {
+      q.emplace(times[i] * (ws[i] - ws[i] / 2), i);
     }
   }
+  cout << moves << endl;
 }
 
 int main() {
   ios_base::sync_with_stdio(0);
   cout.tie(0); cin.tie(0);
 
-  int n, q; cin >> n >> q;
-  sz.resize(n + 1, 1);
-  adj.resize(n + 1);
-  val.resize(n + 1);
-  par.resize(n + 1);
-  heavy.resize(n + 1);
-  stidx.resize(n + 1, -1);
-  pos.resize(n + 1, -1);
-  FOR (i, 1, n + 1) {
-    cin >> val[i];
-  }
-  F0R (_, n - 1) {
-    int a, b; cin >> a >> b;
-    adj[a].pb(b); adj[b].pb(a);
-  }
-  dfssz();
-  dfs();
-  dfsBuild();
-  vector<ST> segs;
-  for (int i : stsz) {
-    segs.eb(i);
-  }
-  FOR (i, 1, n + 1) {
-    segs[stidx[i]].data[segs[stidx[i]].n + pos[i]] = val[i];
-  }
-  for (auto& s : segs) s.build();
-
-  while (q--) {
-    int t; cin >> t;
-    if (t == 1) {
-      int x; ll k; cin >> x >> k;
-      segs[stidx[x]].update(pos[x], k);
-    } else {
-      int x; cin >> x;
-      ll sum = 0;
-      while (~x) {
-        sum += segs[stidx[x]].query(0, pos[x] + 1);
-        x = par[first[stidx[x]]];
-      }
-      cout << sum << endl;
-    }
+  int tt = 1;
+  cin >> tt;
+  FOR (t, 1, tt + 1) {
+    // cout << "Case #" << t << ": ";
+    solve();
   }
   
   return 0;

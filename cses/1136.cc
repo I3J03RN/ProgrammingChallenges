@@ -91,7 +91,7 @@ void tprint(vector<vector<T>>& v, size_t width = 0, ostream& o = cerr) {
 }
 
 struct ST {
-  using T = ll;
+  using T = int;
   const T unit = 0;
   T merge(T l, T r) { return l + r; };
   int n;
@@ -119,99 +119,76 @@ struct ST {
   }
 };
 
-vi sz;
-vector<ll> val;
-vvi adj;
-vi par;
-vector<bool> heavy;
-vi stidx, pos, stsz;
-vi first;
-
-void dfssz(int v = 1, int p = -1) {
-  par[v] = p;
-  for (int u : adj[v]) {
-    if (p != u) {
-      dfssz(u, v);
-      sz[v] += sz[u];
-    }
+struct LCA {
+  vi height, eulerTour, first, last, par;
+  vvi idx;
+  LCA(vvi& adj, int root = 0)
+    : height(SZ(adj), -1), first(SZ(adj), -1), last(SZ(adj), -1), par(SZ(adj), -1) {
+    dfs(adj, root);
+    build();
   }
-}
-
-void dfs(int v = 1, int p = -1) {
-  for (int u : adj[v]) {
-    if (p != u) {
-      dfs(u, v);
-      if (sz[u] > sz[v] / 2) {
-        heavy[u] = true;
+  void build() {
+    const int logn = ceil(log2l(SZ(eulerTour))) + 1;
+    idx.assign(SZ(eulerTour), vi(logn));
+    F0R (i, SZ(eulerTour))
+      idx[i][0] = eulerTour[i];
+    for (int j = 1; (1 << j) <= SZ(eulerTour); ++j)
+      for (int i = 0; i + (1 << j) <= SZ(eulerTour); ++i) {
+        int k = i + (1 << (j - 1));
+        idx[i][j] = height[idx[i][j - 1]] < height[idx[k][j - 1]]
+			? idx[i][j - 1] : idx[k][j - 1];
       }
-    }
-  } 
-}
+  }
+  int rmq(int l, int r) {
+    int k = 31 - __builtin_clz(r - l + 1);
+    return height[idx[l][k]] < height[idx[r - (1 << k) + 1][k]]
+               ? idx[l][k] : idx[r - (1 << k) + 1][k];
+  }
+  void dfs(vvi& adj, int v = 0, int h = 0) {
+    eulerTour.pb(v);
+    first[v] = SZ(eulerTour) - 1;
+    height[v] = h;
+    for (int u : adj[v])
+      if (first[u] == -1) {
+        par[u] = v;
+        dfs(adj, u, h + 1);
+        eulerTour.pb(v);
+      }
+    last[v] = SZ(eulerTour);
+  }
+  int lca(int a, int b) {
+    return rmq(min(first[a], first[b]), max(first[a], first[b]));
+  }
+};
 
-void dfsBuild(int v = 1, int p = -1) {
-  if (heavy[v]) {
-    stidx[v] = stidx[p];
-    ++stsz[stidx[v]];
-    pos[v] = pos[p] + 1;
-  } else {
-    stidx[v] = SZ(stsz);
-    stsz.pb(1); first.pb(v);
-    pos[v] = 0;
-    
-  }
-  for (int u : adj[v]) {
-    if (p != u) {
-      dfsBuild(u, v);
-    }
-  }
-}
 
 int main() {
   ios_base::sync_with_stdio(0);
   cout.tie(0); cin.tie(0);
 
-  int n, q; cin >> n >> q;
-  sz.resize(n + 1, 1);
-  adj.resize(n + 1);
-  val.resize(n + 1);
-  par.resize(n + 1);
-  heavy.resize(n + 1);
-  stidx.resize(n + 1, -1);
-  pos.resize(n + 1, -1);
-  FOR (i, 1, n + 1) {
-    cin >> val[i];
-  }
+  int n, m; cin >> n >> m;
+  vvi adj(n + 1);
   F0R (_, n - 1) {
     int a, b; cin >> a >> b;
     adj[a].pb(b); adj[b].pb(a);
   }
-  dfssz();
-  dfs();
-  dfsBuild();
-  vector<ST> segs;
-  for (int i : stsz) {
-    segs.eb(i);
-  }
-  FOR (i, 1, n + 1) {
-    segs[stidx[i]].data[segs[stidx[i]].n + pos[i]] = val[i];
-  }
-  for (auto& s : segs) s.build();
-
-  while (q--) {
-    int t; cin >> t;
-    if (t == 1) {
-      int x; ll k; cin >> x >> k;
-      segs[stidx[x]].update(pos[x], k);
-    } else {
-      int x; cin >> x;
-      ll sum = 0;
-      while (~x) {
-        sum += segs[stidx[x]].query(0, pos[x] + 1);
-        x = par[first[stidx[x]]];
-      }
-      cout << sum << endl;
+  LCA lca(adj, 1);
+  auto &first = lca.first, &last = lca.last, &par = lca.par;
+  ST st(SZ(lca.eulerTour));
+  while (m--) {
+    int a, b; cin >> a >> b;
+    ++st.data[first[a] + st.n]; ++st.data[st.n + first[b]];
+    int l = lca.lca(a, b);
+    --st.data[st.n + first[l]];
+    if (~par[l]) {
+      --st.data[st.n + first[par[l]]];
     }
   }
+  st.build();
+  FOR (i, 1, n + 1) {
+    cout << st.query(first[i], last[i]) << ' ';
+  }
+  cout << endl;
   
   return 0;
 }
