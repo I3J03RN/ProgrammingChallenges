@@ -90,46 +90,24 @@ void tprint(vector<vector<T>>& v, size_t width = 0, ostream& o = cerr) {
   }
 }
 
-vvi adj;
-vector<ll> dp, sz;
-void dfs1(int v = 0, int p = -1) {
-  for (int u : adj[v]) {
-    if (u != p) {
-      dfs1(u, v);
-      dp[v] += dp[u] + sz[u];
-      sz[v] += sz[u];
-    }
-  }
-}
-
-void dfs2(int v = 0, int p = -1) {
-  if (~p) {
-    dp[v] += dp[p] - sz[v] - dp[v] + (SZ(adj) - sz[v]);
-  }
-  for (int u : adj[v]) {
-    if (u != p) {
-      dfs2(u, v);
-    }  
-  }
-}
-
-
 int main() {
   ios_base::sync_with_stdio(0);
   cout.tie(0); cin.tie(0);
 
-  int n; cin >> n; adj.resize(n);
-  dp.resize(n); sz.resize(n, 1);
-  F0R (_, n - 1) {
-    int a, b; cin >> a >> b; --a; --b;
-    adj[a].pb(b); adj[b].pb(a);
+  int k; cin >> k;
+  if (k % 2 == 0 || k % 10 == 5) {
+    cout << -1 << endl;
+    return 0;
   }
-  dfs1();
-  dout << dvar(dp, sz) << endl;
-  dfs2();
+  if (k == 7) {
+    cout << 1 << endl;
+    return 0;
+  }
+  k *= 9;
+  int ans = 1;
+  for (int cur = 70 % k; cur != 7; cur = cur * 10 % k) ++ans;
+  cout << ans << endl;
 
-  for (ll i : dp) cout << i << ' ';
-  cout << endl;
   
   return 0;
 }

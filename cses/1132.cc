@@ -91,44 +91,46 @@ void tprint(vector<vector<T>>& v, size_t width = 0, ostream& o = cerr) {
 }
 
 vvi adj;
-vector<ll> dp, sz;
+
+vi dist[2], to;
+
 void dfs1(int v = 0, int p = -1) {
   for (int u : adj[v]) {
     if (u != p) {
       dfs1(u, v);
-      dp[v] += dp[u] + sz[u];
-      sz[v] += sz[u];
+      if (dist[0][v] < dist[0][u] + 1) {
+        dist[1][v] = dist[0][v];
+        dist[0][v] = dist[0][u] + 1;
+        to[v] = u;
+      } else {
+        ckmax(dist[1][v], dist[0][u] + 1);
+      }
     }
   }
 }
 
-void dfs2(int v = 0, int p = -1) {
-  if (~p) {
-    dp[v] += dp[p] - sz[v] - dp[v] + (SZ(adj) - sz[v]);
-  }
+void dfs2(int v = 0, int p = -1, int d = 0) {
   for (int u : adj[v]) {
     if (u != p) {
-      dfs2(u, v);
-    }  
+      dfs2(u, v, max(d, dist[to[v] == u][v]) + 1);
+    }
   }
+  ckmax(dist[0][v], d);
 }
-
 
 int main() {
   ios_base::sync_with_stdio(0);
   cout.tie(0); cin.tie(0);
 
   int n; cin >> n; adj.resize(n);
-  dp.resize(n); sz.resize(n, 1);
+  to.assign(n, -1);
+  F0R (i, 2) dist[i].assign(n, 0);
   F0R (_, n - 1) {
     int a, b; cin >> a >> b; --a; --b;
     adj[a].pb(b); adj[b].pb(a);
   }
-  dfs1();
-  dout << dvar(dp, sz) << endl;
-  dfs2();
-
-  for (ll i : dp) cout << i << ' ';
+  dfs1(); dfs2();
+  for (int i : dist[0]) cout << i << ' ';
   cout << endl;
   
   return 0;

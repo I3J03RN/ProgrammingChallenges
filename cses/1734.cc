@@ -90,46 +90,64 @@ void tprint(vector<vector<T>>& v, size_t width = 0, ostream& o = cerr) {
   }
 }
 
-vvi adj;
-vector<ll> dp, sz;
-void dfs1(int v = 0, int p = -1) {
-  for (int u : adj[v]) {
-    if (u != p) {
-      dfs1(u, v);
-      dp[v] += dp[u] + sz[u];
-      sz[v] += sz[u];
-    }
+struct FT {
+  vi A;
+  int n;
+  FT(int n) : A(n + 1, 0), n(n) {}
+  int inline LSOne(int i) { return i & (-i); }
+  int query(int i) {
+    int sum = 0;
+    for (; i; i -= LSOne(i)) sum += A[i];
+    return sum;
   }
-}
-
-void dfs2(int v = 0, int p = -1) {
-  if (~p) {
-    dp[v] += dp[p] - sz[v] - dp[v] + (SZ(adj) - sz[v]);
+  int query(int i, int j) { return query(j) - query(i - 1); }
+  void adjust(int i, int adjustBy) {
+    for (; i <= n; i += LSOne(i)) A[i] += adjustBy;
   }
-  for (int u : adj[v]) {
-    if (u != p) {
-      dfs2(u, v);
-    }  
+  // lb assumes query(i, i) >= 0 forall i in [1, n]
+  // returns min p >= 1, so that [1, p] >= sum
+  // if [1, n] < sum, return n + 1
+  int lb(int sum) {
+    int pos = 0;
+    for (int pw = 1 << 25; pw; pw >>= 1)
+      if (pos + pw <= n && sum > A[pos | pw]) sum -= A[pos |= pw];
+    if (sum) ++pos;
+    return pos;
   }
-}
-
+};
 
 int main() {
   ios_base::sync_with_stdio(0);
   cout.tie(0); cin.tie(0);
 
-  int n; cin >> n; adj.resize(n);
-  dp.resize(n); sz.resize(n, 1);
-  F0R (_, n - 1) {
-    int a, b; cin >> a >> b; --a; --b;
-    adj[a].pb(b); adj[b].pb(a);
+  int n, q; cin >> n >> q;
+  vi xs(n + 1); F0R (i, n) cin >> xs[i + 1];
+  vector<tuple<int, int, int>> qs(q);
+  F0R (i, q) {
+    int a, b; cin >> a >> b;
+    qs[i] = mt(b, a, i);
   }
-  dfs1();
-  dout << dvar(dp, sz) << endl;
-  dfs2();
+  vi ans(q);
+  map<int, int> last;
+  for (int i : xs) last[i] = -1;
 
-  for (ll i : dp) cout << i << ' ';
-  cout << endl;
+  FT ft(n);
+  sort(ALL(qs));
+  int j = 0;
+  for (auto [b, a, idx] : qs) {
+    while (j < b) {
+      ++j;
+      if (int pos = last[xs[j]]; ~pos) {
+        ft.adjust(pos, -1);
+      }
+      last[xs[j]] = j;
+      ft.adjust(j, 1);
+    }
+    ans[idx] = ft.query(a, b);
+  }
+
+
+  for (int i : ans) cout << i << endl;
   
   return 0;
 }

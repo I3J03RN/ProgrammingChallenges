@@ -90,46 +90,65 @@ void tprint(vector<vector<T>>& v, size_t width = 0, ostream& o = cerr) {
   }
 }
 
-vvi adj;
-vector<ll> dp, sz;
-void dfs1(int v = 0, int p = -1) {
-  for (int u : adj[v]) {
-    if (u != p) {
-      dfs1(u, v);
-      dp[v] += dp[u] + sz[u];
-      sz[v] += sz[u];
-    }
-  }
+struct node {
+  ll ans, sum, l, r;
+  node(ll ans, ll sum, ll l, ll r) : ans(ans), sum(sum), l(l), r(r) {}
+  node() : ans(0), sum(0), l(0), r(0) {}
+};
+
+node base(ll n) {
+  return node{max(0ll, n), n, max(0ll, n), max(0ll, n)};
 }
 
-void dfs2(int v = 0, int p = -1) {
-  if (~p) {
-    dp[v] += dp[p] - sz[v] - dp[v] + (SZ(adj) - sz[v]);
+struct ST {
+  using T = node;
+  const T unit{};
+  T merge(T l, T r) {
+    return node{max({l.ans, r.ans, l.sum + r.sum, l.sum + r.l, r.sum + l.r, l.r + r.l}),
+                  l.sum + r.sum, max(l.l, l.sum + r.l), max(r.r, r.sum + l.r)};
   }
-  for (int u : adj[v]) {
-    if (u != p) {
-      dfs2(u, v);
-    }  
+  int n;
+  vector<T> data;
+  ST(int n) : n(n), data(2 * n) {}
+  ST(vector<T>& v) : n(SZ(v)), data(2 * SZ(v)) {
+    copy(ALL(v), data.begin() + SZ(v));
+    build();
   }
-}
+  void build() {
+    for (int i = n - 1; i; --i)
+      data[i] = merge(data[i << 1], data[i << 1 | 1]);
+  }
+  T query(int l, int r) {
+    T li = unit, ri = unit;
+    for (l += n, r += n; l < r; r >>= 1, l >>= 1) {
+      if (l & 1) li = merge(li, data[l++]);
+      if (r & 1) ri = merge(data[--r], ri);
+    }
+    return merge(li, ri);
+  }
+  void update(int i, ll val) {
+    for (data[i += n] = base(val); i > 1; i >>= 1)
+      data[i >> 1] = merge(data[i & ~1], data[i | 1]);
+  }
+};
+
 
 
 int main() {
   ios_base::sync_with_stdio(0);
   cout.tie(0); cin.tie(0);
 
-  int n; cin >> n; adj.resize(n);
-  dp.resize(n); sz.resize(n, 1);
-  F0R (_, n - 1) {
-    int a, b; cin >> a >> b; --a; --b;
-    adj[a].pb(b); adj[b].pb(a);
+  int n, m; cin >> n >> m;
+  ST st(n);
+  F0R (i, n) {
+    ll x; cin >> x; st.data[i + n] = base(x);
   }
-  dfs1();
-  dout << dvar(dp, sz) << endl;
-  dfs2();
-
-  for (ll i : dp) cout << i << ' ';
-  cout << endl;
+  st.build();
+  while (m--) {
+    int k; ll x; cin >> k >> x;
+    st.update(k - 1, x);
+    cout << st.query(0, n).ans << endl;
+  }
   
   return 0;
 }

@@ -90,45 +90,63 @@ void tprint(vector<vector<T>>& v, size_t width = 0, ostream& o = cerr) {
   }
 }
 
-vvi adj;
-vector<ll> dp, sz;
-void dfs1(int v = 0, int p = -1) {
-  for (int u : adj[v]) {
-    if (u != p) {
-      dfs1(u, v);
-      dp[v] += dp[u] + sz[u];
-      sz[v] += sz[u];
+struct ST {
+  using T = int;
+  const T unit = 0;
+  T merge(T l, T r) { return max(l, r); };
+  int n;
+  vector<T> data;
+  ST(int n) : n(n), data(2 * n) {}
+  ST(vector<T>& v) : n(SZ(v)), data(2 * SZ(v)) {
+    copy(ALL(v), data.begin() + SZ(v));
+    build();
+  }
+  void build() {
+    for (int i = n - 1; i; --i)
+      data[i] = merge(data[i << 1], data[i << 1 | 1]);
+  }
+  T query(int l, int r) {
+    T li = unit, ri = unit;
+    for (l += n, r += n; l < r; r >>= 1, l >>= 1) {
+      if (l & 1) li = merge(li, data[l++]);
+      if (r & 1) ri = merge(data[--r], ri);
     }
+    return merge(li, ri);
   }
-}
-
-void dfs2(int v = 0, int p = -1) {
-  if (~p) {
-    dp[v] += dp[p] - sz[v] - dp[v] + (SZ(adj) - sz[v]);
+  void update(int i, T val) {
+    for (data[i += n] = val; i > 1; i >>= 1)
+      data[i >> 1] = merge(data[i & ~1], data[i | 1]);
   }
-  for (int u : adj[v]) {
-    if (u != p) {
-      dfs2(u, v);
-    }  
-  }
-}
+};
 
 
 int main() {
   ios_base::sync_with_stdio(0);
   cout.tie(0); cin.tie(0);
 
-  int n; cin >> n; adj.resize(n);
-  dp.resize(n); sz.resize(n, 1);
-  F0R (_, n - 1) {
-    int a, b; cin >> a >> b; --a; --b;
-    adj[a].pb(b); adj[b].pb(a);
+  int n, m; cin >> n >> m;
+  ST st(n);
+  F0R (i, n) cin >> st.data[i + n];
+  st.build();
+  while (m--) {
+    int i; cin >> i;
+    int l = 0, r = n, res;
+    while (l < r) {
+      int mid = (l + r) / 2;
+      res = st.query(0, mid);
+      if (res < i) {
+        l = mid + 1;
+      } else {
+        r = mid;
+      }
+    }
+    if (st.query(0, l) < i) {
+      cout << 0 << ' ';
+    } else {
+      cout << l << ' ';
+      st.update(l - 1, st.query(l - 1, l) - i);
+    }
   }
-  dfs1();
-  dout << dvar(dp, sz) << endl;
-  dfs2();
-
-  for (ll i : dp) cout << i << ' ';
   cout << endl;
   
   return 0;

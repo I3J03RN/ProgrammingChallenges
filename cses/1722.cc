@@ -90,46 +90,103 @@ void tprint(vector<vector<T>>& v, size_t width = 0, ostream& o = cerr) {
   }
 }
 
-vvi adj;
-vector<ll> dp, sz;
-void dfs1(int v = 0, int p = -1) {
-  for (int u : adj[v]) {
-    if (u != p) {
-      dfs1(u, v);
-      dp[v] += dp[u] + sz[u];
-      sz[v] += sz[u];
-    }
+struct mod {
+  static const ll p = 1e9 + 7;
+  ll val;
+  mod() : val(0) {}
+  mod(ll val) : val(val % p) { if (this->val < 0) this->val += p; }
+  mod& operator+=(const mod& o) {
+    val = (val + o.val) % p;
+    return *this;
   }
-}
+  mod& operator-=(const mod& o) {
+    val = (val - o.val + p) % p;
+    return *this;
+  }
+  mod& operator*=(const mod& o) {
+    val = val * o.val % p;
+    return *this;
+  }
+  mod& operator/=(mod o) { return (*this) *= pow(o, p - 2); }
+  mod& operator++() { return (*this) += 1; }
+  mod operator++(int) { return ++(*this) - 1; }
+  mod& operator--() { return (*this) -= 1; }
+  mod operator--(int) { return --(*this) + 1; }
+  mod friend operator+(mod a, const mod& b) { return a += b; }
+  mod friend operator-(mod a, const mod& b) { return a -= b; }
+  mod friend operator*(mod a, const mod& b) { return a *= b; }
+  mod friend operator/(mod a, const mod& b) { return a /= b; }
+  static mod pow(mod a, mod b) {
+    mod res = 1;
+    for (; b.val; b.val >>= 1, a = a * a)
+      if (b.val & 1) res = res * a;
+    return res;
+  }
+  friend istream& operator>>(istream& i, mod& m) {
+    i >> m.val;
+    m.val %= mod::p;
+    if (m.val < 0) m.val += mod::p;
+    return i;
+  }
+  friend ostream& operator<<(ostream& o, const mod& m) { return o << m.val; }
+};
 
-void dfs2(int v = 0, int p = -1) {
-  if (~p) {
-    dp[v] += dp[p] - sz[v] - dp[v] + (SZ(adj) - sz[v]);
+template<int sz, typename T>
+struct matrix : public array<array<T, sz>, sz> {
+  matrix() : array<array<T, sz>, sz>{} {}
+  matrix(const T& val) : array<array<T, sz>, sz>{} {
+    F0R (i, sz) (*this)[i][i] = val;
   }
-  for (int u : adj[v]) {
-    if (u != p) {
-      dfs2(u, v);
-    }  
+  matrix& operator+=(const matrix& o) {
+    F0R (r, sz) F0R (c, sz) (*this)[r][c] += o[r][c];
+    return *this;
   }
-}
-
+  matrix& operator-=(const matrix& o) {
+    F0R (r, sz) F0R (c, sz) (*this)[r][c] -= o[r][c];
+    return *this;
+  }
+  matrix& operator*=(const matrix& o) {
+    return *this = *this * o;
+  }
+  matrix& operator*=(T v) {
+    F0R (r, sz) F0R (c, sz) (*this)[r][c] *= v;
+    return *this;
+  }
+  friend matrix operator+(const matrix a, const matrix& b) {
+    return a += b;
+  }
+  friend matrix operator-(const matrix a, const matrix& b) {
+    return a -= b;
+  }
+  friend matrix operator*(const matrix& a, const matrix& b) {
+    matrix res{};
+    F0R (r, sz) F0R (c, sz) F0R (k, sz) res[r][c] += a[r][k] * b[k][c];
+    return res;
+  }
+  friend matrix operator*(matrix a, T v) {
+    return a *= v;
+  }
+  friend matrix operator*(T v, matrix a) {
+    return a *= v;
+  }
+};
+using mat = matrix<2, mod>;
 
 int main() {
   ios_base::sync_with_stdio(0);
   cout.tie(0); cin.tie(0);
 
-  int n; cin >> n; adj.resize(n);
-  dp.resize(n); sz.resize(n, 1);
-  F0R (_, n - 1) {
-    int a, b; cin >> a >> b; --a; --b;
-    adj[a].pb(b); adj[b].pb(a);
+  ll n; cin >> n; ++n;
+  mat base{};
+  base[1][0] = base[0][1] = base[1][1] = 1;
+  mat res{1};
+  for (; n > 0; n >>= 1) {
+    if (n & 1) {
+      res *= base;
+    }
+    base *= base;
   }
-  dfs1();
-  dout << dvar(dp, sz) << endl;
-  dfs2();
-
-  for (ll i : dp) cout << i << ' ';
-  cout << endl;
+  cout << res[0][0] << endl;
   
   return 0;
 }

@@ -90,46 +90,63 @@ void tprint(vector<vector<T>>& v, size_t width = 0, ostream& o = cerr) {
   }
 }
 
-vvi adj;
-vector<ll> dp, sz;
-void dfs1(int v = 0, int p = -1) {
-  for (int u : adj[v]) {
-    if (u != p) {
-      dfs1(u, v);
-      dp[v] += dp[u] + sz[u];
-      sz[v] += sz[u];
-    }
+struct LCA {
+  vi height, eulerTour, first;
+  vvi idx;
+  LCA(vvi& adj, int root = 0)
+      : height(SZ(adj), -1), first(SZ(adj), -1) {
+    dfs(adj, root);
+    build();
   }
-}
-
-void dfs2(int v = 0, int p = -1) {
-  if (~p) {
-    dp[v] += dp[p] - sz[v] - dp[v] + (SZ(adj) - sz[v]);
+  void build() {
+    const int logn = ceil(log2l(SZ(eulerTour))) + 1;
+    idx.assign(SZ(eulerTour), vi(logn));
+    F0R (i, SZ(eulerTour))
+      idx[i][0] = eulerTour[i];
+    for (int j = 1; (1 << j) <= SZ(eulerTour); ++j)
+      for (int i = 0; i + (1 << j) <= SZ(eulerTour); ++i) {
+        int k = i + (1 << (j - 1));
+        idx[i][j] = height[idx[i][j - 1]] < height[idx[k][j - 1]]
+			? idx[i][j - 1] : idx[k][j - 1];
+      }
   }
-  for (int u : adj[v]) {
-    if (u != p) {
-      dfs2(u, v);
-    }  
+  int rmq(int l, int r) {
+    int k = 31 - __builtin_clz(r - l + 1);
+    return height[idx[l][k]] < height[idx[r - (1 << k) + 1][k]]
+               ? idx[l][k] : idx[r - (1 << k) + 1][k];
   }
-}
+  void dfs(vvi& adj, int v = 0, int h = 0) {
+    eulerTour.pb(v);
+    first[v] = SZ(eulerTour) - 1;
+    height[v] = h;
+    for (int u : adj[v])
+      if (first[u] == -1) {
+        dfs(adj, u, h + 1);
+        eulerTour.pb(v);
+      }
+  }
+  int lca(int a, int b) {
+    return rmq(min(first[a], first[b]), max(first[a], first[b]));
+  }
+};
 
 
 int main() {
   ios_base::sync_with_stdio(0);
   cout.tie(0); cin.tie(0);
 
-  int n; cin >> n; adj.resize(n);
-  dp.resize(n); sz.resize(n, 1);
-  F0R (_, n - 1) {
-    int a, b; cin >> a >> b; --a; --b;
-    adj[a].pb(b); adj[b].pb(a);
+  int n, q; cin >> n >> q; 
+  vvi adj(n);
+  FOR (i, 1, n) {
+    int p; cin >> p; --p;
+    adj[p].pb(i);
+    adj[i].pb(p);
   }
-  dfs1();
-  dout << dvar(dp, sz) << endl;
-  dfs2();
-
-  for (ll i : dp) cout << i << ' ';
-  cout << endl;
+  LCA lca(adj);
+  while (q--) {
+    int a, b; cin >> a >> b;
+    cout << lca.lca(a - 1, b - 1) + 1 << endl;
+  }
   
   return 0;
 }

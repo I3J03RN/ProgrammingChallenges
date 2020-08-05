@@ -90,46 +90,38 @@ void tprint(vector<vector<T>>& v, size_t width = 0, ostream& o = cerr) {
   }
 }
 
-vvi adj;
-vector<ll> dp, sz;
-void dfs1(int v = 0, int p = -1) {
-  for (int u : adj[v]) {
-    if (u != p) {
-      dfs1(u, v);
-      dp[v] += dp[u] + sz[u];
-      sz[v] += sz[u];
-    }
-  }
-}
-
-void dfs2(int v = 0, int p = -1) {
-  if (~p) {
-    dp[v] += dp[p] - sz[v] - dp[v] + (SZ(adj) - sz[v]);
-  }
-  for (int u : adj[v]) {
-    if (u != p) {
-      dfs2(u, v);
-    }  
-  }
-}
+#include <ext/pb_ds/assoc_container.hpp>
+#include <ext/pb_ds/tree_policy.hpp>
+using namespace __gnu_pbds;
+template <typename T>
+using oset = tree<T, null_type, less<T>, rb_tree_tag,
+                  tree_order_statistics_node_update>;
+// same operations as set w/ extra options:
+// - oset.find_by_order(int k) returns iterator to the k-th smallest
+//   entry (0 indexed)
+// - oset.oreder_of_key(int k) returns the number of keys strictly
+//   smaller than k
 
 
 int main() {
   ios_base::sync_with_stdio(0);
   cout.tie(0); cin.tie(0);
 
-  int n; cin >> n; adj.resize(n);
-  dp.resize(n); sz.resize(n, 1);
-  F0R (_, n - 1) {
-    int a, b; cin >> a >> b; --a; --b;
-    adj[a].pb(b); adj[b].pb(a);
+  int n, q; cin >> n >> q;
+  vi ps(n); F0R (i, n) cin >> ps[i];
+  oset<ii> s;
+  F0R (i, n) s.insert(mp(ps[i], i));
+  while (q--) {
+    char t; cin >> t;
+    if (t == '!') {
+      int k, x; cin >> k >> x; k--;
+      s.erase(mp(ps[k], k));
+      s.insert(mp(ps[k] = x, k));
+    } else {
+      int a, b; cin >> a >> b;
+      cout << s.order_of_key(mp(b + 1, 0)) - s.order_of_key(mp(a, 0)) << endl;
+    }
   }
-  dfs1();
-  dout << dvar(dp, sz) << endl;
-  dfs2();
-
-  for (ll i : dp) cout << i << ' ';
-  cout << endl;
   
   return 0;
 }

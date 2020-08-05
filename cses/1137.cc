@@ -90,46 +90,78 @@ void tprint(vector<vector<T>>& v, size_t width = 0, ostream& o = cerr) {
   }
 }
 
+struct ST {
+  using T = ll;
+  const T unit = 0;
+  T merge(T l, T r) { return l + r; };
+  int n;
+  vector<T> data;
+  ST(int n) : n(n), data(2 * n) {}
+  ST(vector<T>& v) : n(SZ(v)), data(2 * SZ(v)) {
+    copy(ALL(v), data.begin() + SZ(v));
+    build();
+  }
+  void build() {
+    for (int i = n - 1; i; --i)
+      data[i] = merge(data[i << 1], data[i << 1 | 1]);
+  }
+  T query(int l, int r) {
+    T li = unit, ri = unit;
+    for (l += n, r += n; l < r; r >>= 1, l >>= 1) {
+      if (l & 1) li = merge(li, data[l++]);
+      if (r & 1) ri = merge(data[--r], ri);
+    }
+    return merge(li, ri);
+  }
+  void update(int i, T val) {
+    for (data[i += n] = val; i > 1; i >>= 1)
+      data[i >> 1] = merge(data[i & ~1], data[i | 1]);
+  }
+};
+
+vi first, last;
+vector<ll> dp, tour;
 vvi adj;
-vector<ll> dp, sz;
-void dfs1(int v = 0, int p = -1) {
+int cnt = 0;
+
+void dfs(int v = 0, int p = -1) {
+  first[v] = cnt++;
+  tour.pb(dp[v]);
   for (int u : adj[v]) {
     if (u != p) {
-      dfs1(u, v);
-      dp[v] += dp[u] + sz[u];
-      sz[v] += sz[u];
+      dfs(u, v);
     }
   }
+  last[v] = cnt;
 }
-
-void dfs2(int v = 0, int p = -1) {
-  if (~p) {
-    dp[v] += dp[p] - sz[v] - dp[v] + (SZ(adj) - sz[v]);
-  }
-  for (int u : adj[v]) {
-    if (u != p) {
-      dfs2(u, v);
-    }  
-  }
-}
-
 
 int main() {
   ios_base::sync_with_stdio(0);
   cout.tie(0); cin.tie(0);
 
-  int n; cin >> n; adj.resize(n);
-  dp.resize(n); sz.resize(n, 1);
+  int n, q; cin >> n >> q;
+  adj.resize(n);
+  tour.reserve(n);
+  first.resize(n); last.resize(n);
+  dp.resize(n);
+  F0R (i, n) cin >> dp[i];
   F0R (_, n - 1) {
-    int a, b; cin >> a >> b; --a; --b;
+    int a, b; cin >> a >> b;
+    --a; --b;
     adj[a].pb(b); adj[b].pb(a);
   }
-  dfs1();
-  dout << dvar(dp, sz) << endl;
-  dfs2();
-
-  for (ll i : dp) cout << i << ' ';
-  cout << endl;
+  dfs();
+  ST st(tour);
+  while (q--) {
+    int t, s; cin >> t >> s;
+    --s;
+    if (t == 1) {
+      int x; cin >> x;
+      st.update(first[s], x);
+    } else {
+      cout << st.query(first[s], last[s]) << endl;
+    }
+  }
   
   return 0;
 }

@@ -90,46 +90,61 @@ void tprint(vector<vector<T>>& v, size_t width = 0, ostream& o = cerr) {
   }
 }
 
-vvi adj;
-vector<ll> dp, sz;
-void dfs1(int v = 0, int p = -1) {
-  for (int u : adj[v]) {
-    if (u != p) {
-      dfs1(u, v);
-      dp[v] += dp[u] + sz[u];
-      sz[v] += sz[u];
+struct FT2D {
+  struct FT {
+    vi A;
+    int n;
+    FT(int n) : A(n + 1, 0), n(n) {}
+    int inline LSOne(int i) { return i & (-i); }
+    int query(int i) {
+      int sum = 0;
+      for (; i; i -= LSOne(i)) sum += A[i];
+      return sum;
     }
+    int query(int i, int j) { return query(j) - query(i - 1); }
+    void update(int i, int adjustBy) {
+      for (; i <= n; i += LSOne(i)) A[i] += adjustBy;
+    }
+  };
+  vector<FT> fts;
+  int n;
+  FT2D(int n, int m) : fts(n + 1, FT(m)), n(n) {};
+  int inline LSOne(int i) { return i & (-i); }
+  int query(int i, int j1, int j2) {
+    int sum = 0;
+    for (; i; i -= LSOne(i)) sum += fts[i].query(j1, j2);
+    return sum;
   }
-}
-
-void dfs2(int v = 0, int p = -1) {
-  if (~p) {
-    dp[v] += dp[p] - sz[v] - dp[v] + (SZ(adj) - sz[v]);
+  int query(int i1, int i2, int j1, int j2) { return query(i2, j1, j2) - query(i1 - 1, j1, j2); }
+  void update(int i, int j, int val) {
+    for (; i <= n; i += LSOne(i)) fts[i].update(j, val);
   }
-  for (int u : adj[v]) {
-    if (u != p) {
-      dfs2(u, v);
-    }  
-  }
-}
+};
 
 
 int main() {
   ios_base::sync_with_stdio(0);
   cout.tie(0); cin.tie(0);
 
-  int n; cin >> n; adj.resize(n);
-  dp.resize(n); sz.resize(n, 1);
-  F0R (_, n - 1) {
-    int a, b; cin >> a >> b; --a; --b;
-    adj[a].pb(b); adj[b].pb(a);
-  }
-  dfs1();
-  dout << dvar(dp, sz) << endl;
-  dfs2();
-
-  for (ll i : dp) cout << i << ' ';
-  cout << endl;
-  
+  int n, q; cin >> n >> q;
+  FT2D ft(n, n);
+  vector<string> m(n); F0R (i, n) cin >> m[i];
+  F0R (i, n) F0R (j, n) if (m[i][j] == '*') ft.update(i + 1, j + 1, 1);
+  while (q--) {
+    int t; cin >> t;
+    if (t == 1) {
+      int i, j; cin >> i >> j;
+      if (m[i - 1][j - 1] == '*') {
+        ft.update(i, j, -1);
+        m[i - 1][j - 1] = '.';
+      } else {
+        ft.update(i, j, 1);
+        m[i - 1][j - 1] = '*';
+      }
+    } else {
+      int i1, i2, j1, j2; cin >> i1 >> j1 >> i2 >> j2;
+      cout << ft.query(i1, i2, j1, j2) << endl;
+    }
+  }   
   return 0;
 }
