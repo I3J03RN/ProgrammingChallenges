@@ -114,28 +114,29 @@ struct ST {
     return merge(li, ri);
   }
   void update(int i, T val) {
-    for (data[i += n] = val; i > 1; i >>= 1)
+    for (data[i += n] += val; i > 1; i >>= 1)
       data[i >> 1] = merge(data[i & ~1], data[i | 1]);
   }
 };
-
 struct HLD {
   int n;
   vi par, sz, height;
   vvi paths;
   vi in, pos;
   ST st;
-  HLD(vvi& adj, vector<ll> val, int root = 0)
+  HLD(vvi& adj, vector<ST::T> val, int root = 0)
     : n{SZ(adj)}, par(n), sz(n, 1), height(n), in(n), pos(n), st{n} {
     dfssz(adj, root);
     forward_list<int> order;
     dfsbuild(adj, root, order);
+    // dout << dvar(paths) << endl;
     int j = 0;
     for (int i : order) {
       for (int v : paths[i]) {
         st.data[st.n + (pos[v] = j++)] = val[v];
       }
     }
+    assert(j == SZ(adj));
     st.build();
   }
   void dfssz(vvi& adj, int v, int h = 0, int p = -1) {
@@ -165,7 +166,7 @@ struct HLD {
   ST::T queryPath(int a, int b) {
     ST::T v = st.unit;
     while (in[a] != in[b]) {
-      if (height[a] < height[b]) swap(a, b);
+      if (height[paths[in[a]][0]] < height[paths[in[b]][0]]) swap(a, b);
       v = st.merge(v, st.query(pos[paths[in[a]][0]], pos[a] + 1));
       a = par[paths[in[a]][0]];
     }
@@ -177,31 +178,27 @@ struct HLD {
   }
 };
 
+
 int main() {
   ios_base::sync_with_stdio(0);
   cout.tie(0); cin.tie(0);
 
   int n, q; cin >> n >> q;
-  vvi adj(n + 1);
-  vector<ST::T> val(n + 1);
-  FOR (i, 1, n + 1) {
-    cin >> val[i];
-  }
+  vector<ll> as(n); F0R (i, n) cin >> as[i];
+  vvi adj(n);
   F0R (_, n - 1) {
     int a, b; cin >> a >> b;
     adj[a].pb(b); adj[b].pb(a);
   }
-
-  HLD hld(adj, val, 1);
-
+  HLD hld(adj, as, 0);
   while (q--) {
     int t; cin >> t;
-    if (t == 1) {
-      int x; ll k; cin >> x >> k;
-      hld.update(x, k);
+    if (t) {
+      int u, v; cin >> u >> v;
+      cout << hld.queryPath(u, v) << endl;
     } else {
-      int x; cin >> x;
-      cout << hld.queryPath(1, x) << endl;
+      int v; ll x; cin >> v >> x;
+      hld.update(v, x);
     }
   }
   
