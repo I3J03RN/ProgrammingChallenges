@@ -1,0 +1,56 @@
+// this line is here for a reason
+#include <bits/stdc++.h>
+using namespace std;
+typedef long long ll;
+typedef pair<int, int> ii;
+typedef vector<int> vi;
+typedef vector<ii> vii;
+typedef vector<vi> vvi;
+typedef vector<vii> vvii;
+#define fi first
+#define se second
+#define eb emplace_back
+#define pb push_back
+#define mp make_pair
+#define mt make_tuple
+#define endl '\n'
+#define ALL(x) (x).begin(), (x).end()
+#define RALL(x) (x).rbegin(), (x).rend()
+#define SZ(x) (int)(x).size()
+#define FOR(a, b, c) for (auto a = (b); (a) < (c); ++(a))
+#define F0R(a, b) FOR (a, 0, (b))
+template <typename T>
+bool ckmin(T& a, const T& b) { return a > b ? a = b, true : false; }
+template <typename T>
+bool ckmax(T& a, const T& b) { return a < b ? a = b, true : false; }
+#ifndef DEBUG
+#define DEBUG 0
+#endif
+#define dout if (DEBUG) cerr
+#define dvar(...) " [" << #__VA_ARGS__ ": " << (__VA_ARGS__) << "] "
+
+
+double dp[100][100][100];
+
+double dfs(int a, int b, int c) {
+  if (max({a, b, c}) == 100) return 0;
+  if (dp[a][b][c] >= 0) return dp[a][b][c];
+  double sum = a + b + c;
+  return dp[a][b][c] = a / sum * (1 + dfs(a + 1, b, c))
+    + b / sum * (1 + dfs(a, b + 1, c))
+    + c / sum * (1 + dfs(a, b, c + 1));
+}
+
+int main() {
+  ios_base::sync_with_stdio(0);
+  cin.tie(0);
+
+  double* ptr = &dp[0][0][0];
+  fill(ptr, ptr + sizeof(dp) / 8, -1.0);
+
+  int a, b, c; cin >> a >> b >> c;
+  cout << fixed << setprecision(16) << dfs(a, b, c) << endl;
+  
+  
+  return 0;
+}
