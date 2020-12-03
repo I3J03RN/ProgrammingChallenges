@@ -64,41 +64,72 @@ ostream& operator<<(ostream& o, const pair<a, b>& p) {
     return o << '(' << p.fi << ", " << p.se << ')';
 }
 
-void solve() {
-    int n;
-    cin >> n;
-    vector<ll> as(n);
-    string s;
-    F0R (i, n) cin >> as[i];
-    cin >> s;
-    vector<ll> base;
-    R0F (i, n - 1) {
-        ll k = as[i];
-        for (ll v : base) {
-            ckmin(k, k ^ v);
-        }
-        if (k) {
-            if (s[i] == '1') {
-                cout << 1 << endl;
-                return;
-            } else {
-                base.pb(k);
-            }
-        }
+template<int N>
+struct XorBase : vector<bitset<N>> {
+  using T = bitset<N>;
+  static bool tryReduce(T& test, const T& other) {
+    for (int i = N - 1; ~i; --i) {
+      if (other[i]) {
+        if (test[i]) return test ^= other, true;
+        break;
+      }
     }
-    cout << 0 << endl;
+    return false;
+  }
+  void apply(T& toApply) {
+      for(const T& b : *this)
+          tryReduce(toApply, b);
+  }
+  pair<bool, vector<bool>> to(T elem) {
+      vector<bool> res(SZ(*this));
+      F0R(i, SZ(*this))
+          res[i] = tryReduce(elem, (*this)[i]);
+      return mp(elem.none(), res);
+  }
+  bool isIn(T toCheck) {
+      apply(toCheck);
+      return toCheck.none();
+  }
+  bool add(T toAdd) {
+    apply(toAdd);
+    if(toAdd.any()) this->pb(toAdd);
+    return toAdd.any();
+  }
+  XorBase(const vector<T>& elems) {
+      for(const auto& e : elems) add(e);
+  }
+  XorBase() {};
+};
+
+void solve() {
+  int n;
+  cin >> n;
+  vector<ll> as(n);
+  string s;
+  F0R (i, n) cin >> as[i];
+  cin >> s;
+  XorBase<64> base;
+  R0F (i, n - 1) {
+    if (base.add(bitset<64>(as[i]))) {
+      if (s[i] == '1') {
+        cout << 1 << endl;
+        return;
+      }
+    }
+  }
+  cout << 0 << endl;
 }
 
 int main() {
-    ios_base::sync_with_stdio(0);
-    cin.tie(0);
+  ios_base::sync_with_stdio(0);
+  cin.tie(0);
 
-    int tt = 1;
-    cin >> tt;
-    FOR (t, 1, tt + 1) {
-	// cout << "Case #" << t << ": ";
-	solve();
-    }
+  int tt = 1;
+  cin >> tt;
+  FOR (t, 1, tt + 1) {
+    // cout << "Case #" << t << ": ";
+    solve();
+  }
 
-    return 0;
+  return 0;
 }

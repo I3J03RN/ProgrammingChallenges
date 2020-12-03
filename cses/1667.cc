@@ -90,39 +90,80 @@ void tprint(vector<vector<T>>& v, size_t width = 0, ostream& o = cerr) {
   }
 }
 
+namespace graph {
+  template<bool D = false, typename L = bool>
+  struct G : vector<L> {
+    int n;
+    vvi adj;
+    vector<bool> seen;
+    G(int n, const L& l = L()) : vector<L>(n, l), n(n), adj(n) {}
+    void add(int a, int b) {
+      adj[a].pb(b);
+      if (D) adj[b].pb(a);
+    }
+    void reset_seen() {
+      seen.assign(n, false);
+    }
+    template<typename F>
+    decltype(auto) dfs(int v, F visit, int p = -1) {
+      seen[v] = true;
+      visit(v, p);
+      for (int u : adj[v]) {
+        if (!seen[u]) {
+          dfs(u, visit, v);
+        }
+      }
+    }
+    template<typename F>
+    void bfs(const vi& start, F visit, bool reset = true) {
+      if (reset) reset_seen();
+      queue<ii> q;
+      for (int i : start) {
+        seen[i] = true;
+        q.emplace(i, -1);
+      }
+      while (!q.empty()) {
+        int v, p;
+        tie(v, p) = q.front(); q.pop();
+        visit(v, p);
+        for (int u : adj[v]) {
+          if (!seen[u]) {
+            seen[u] = true;
+            q.emplace(u, v);
+          }
+        }
+      }
+    }
+  };
+}
+
+struct Label {
+  int p, d;
+  Label() : p(-1), d(1e9) {}
+};
+using G = graph::G<true, Label>;
 
 void solve() {
   int n, m;
   cin >> n >> m;
-  vvi adj(n);
-  while (m--) {
-    int a, b;
-    cin >> a >> b;
-    --a; --b;
-    adj[a].pb(b); adj[b].pb(a);
+  G g(n);
+  F0R (_, m) {
+    int a, b; cin >> a >> b;
+    g.add(a - 1, b - 1);
   }
-  vi p(n, -1);
-  queue<int> q;
-  q.push(0); p[0] = -2;
-  while (!q.empty()) {
-    int v = q.front(); q.pop();
-    for (int u : adj[v]) {
-      if (p[u] == -1) {
-        p[u] = v;
-        q.push(u);
-      }
+  g.bfs({n - 1}, [&](int v, int p) {
+    if (p == -1) {
+      g[v].d = 0;
+    } else {
+      g[v].d = g[p].d + 1;
+      g[v].p = p;
     }
-  }
-  if (~p[n - 1]) {
-    int iter = n - 1;
-    vi ans;
-    do {
-      ans.pb(iter + 1);
-      iter = p[iter];
-    } while (iter != -2);
-    reverse(ALL(ans));
-    cout << SZ(ans) << endl;
-    for (int i : ans) cout << i << ' ';
+  });
+  if (~g[0].p) {
+    cout << g[0].d + 1 << endl;
+    for (int it = 0; ~it; it = g[it].p) {
+      cout << it + 1 << ' ';
+    }
     cout << endl;
   } else {
     cout << "IMPOSSIBLE" << endl;

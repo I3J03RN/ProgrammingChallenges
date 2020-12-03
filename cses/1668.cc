@@ -90,43 +90,122 @@ void tprint(vector<vector<T>>& v, size_t width = 0, ostream& o = cerr) {
   }
 }
 
-vi color;
-vvi adj;
-
-bool dfs(int v = 0) {
-  for (int u : adj[v]) {
-    if (-1 == color[u]) {
-      color[u] = !color[v];
-      if (!dfs(u)) return 0;
-    } else if (color[u] == color[v]) {
-      return 0;
+template<bool D = false, typename L = bool>
+struct G : vector<L> {
+  int n;
+  vvi adj;
+  vector<bool> seen;
+  G(int n, const L& l = L()) : vector<L>(n, l), n(n), adj(n) {}
+  void add(int a, int b) {
+    adj[a].pb(b);
+    if (D) adj[b].pb(a);
+  }
+  void reset_seen() {
+    seen.assign(n, false);
+  }
+  template<typename F>
+  void dfs(int v, F visit, int p = -1) {
+    seen[v] = true;
+    visit(v, p);
+    for (int u : adj[v]) {
+      if (!seen[u]) {
+        dfs(u, visit, v);
+      }
     }
   }
+  template<typename F, typename G>
+  void dfs(int v, F visit, G peek, int p = -1) {
+    seen[v] = true;
+    visit(v, p);
+    for (int u : adj[v]) {
+      peek(u, v);
+      if (!seen[u]) {
+        dfs(u, visit, v);
+      }
+    }
+  }
+  template<typename F>
+  void bfs(const vi& start, F visit, bool reset = true) {
+    if (reset) reset_seen();
+    queue<ii> q;
+    for (int i : start) {
+      seen[i] = true;
+      q.emplace(i, -1);
+    }
+    while (!q.empty()) {
+      int v, p;
+      tie(v, p) = q.front(); q.pop();
+      visit(v, p);
+      for (int u : adj[v]) {
+        if (!seen[u]) {
+          seen[u] = true;
+          q.emplace(u, v);
+        }
+      }
+    }
+  }
+};
 
-  return 1;
-}
+
+// vi color;
+// vvi adj;
+
+// bool dfs(int v = 0) {
+//   for (int u : adj[v]) {
+//     if (-1 == color[u]) {
+//       color[u] = !color[v];
+//       if (!dfs(u)) return 0;
+//     } else if (color[u] == color[v]) {
+//       return 0;
+//     }
+//   }
+
+//   return 1;
+// }
 
 void solve() {
   int n, m;
   cin >> n >> m;
-  color.resize(n, -1); adj.resize(n);
-  while (m--) {
-    int a, b;
-    cin >> a >> b;
-    --a; --b;
-    adj[a].pb(b); adj[b].pb(a);
+  // color.resize(n, -1); adj.resize(n);
+  // while (m--) {
+  //   int a, b;
+  //   cin >> a >> b;
+  //   --a; --b;
+  //   adj[a].pb(b); adj[b].pb(a);
+  // }
+  // F0R (i, n) {
+  //   if (-1 == color[i]) {
+  //     color[i] = 0;
+  //     if (!dfs(i)) {
+  //       cout << "IMPOSSIBLE" << endl;
+  //       return;
+  //     }
+  //   }
+  // }
+  // for (int i : color) cout << i + 1 << ' ';
+  // cout << endl;
+
+  G<true, int> g(n, -1);
+  F0R (_, m) {
+    int a, b; cin >> a >> b;
+    g.add(a - 1, b - 1);
   }
+  g.reset_seen();
   F0R (i, n) {
-    if (-1 == color[i]) {
-      color[i] = 0;
-      if (!dfs(i)) {
-        cout << "IMPOSSIBLE" << endl;
-        return;
-      }
+    if (!g.seen[i]) {
+      g.dfs(i, [&](int v, int p) {
+        g[v] = p == -1 ? 0 : !g[p];
+      }, [&](int v, int p) {
+        if (g[v] == g[p]) g[p] = -1;
+      });
     }
   }
-  for (int i : color) cout << i + 1 << ' ';
-  cout << endl;
+  if (count(ALL(g), -1)) {
+    cout << "IMPOSSIBLE" << endl;
+  } {
+    for (int i : g) cout << i + 1 << ' ';
+    cout << endl;
+  }
 }
 
 int main() {

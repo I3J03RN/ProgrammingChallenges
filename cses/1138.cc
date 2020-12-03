@@ -90,15 +90,19 @@ void tprint(vector<vector<T>>& v, size_t width = 0, ostream& o = cerr) {
   }
 }
 
+template<typename T>
 struct ST {
-  using T = ll;
-  const T unit = 0;
-  T merge(T l, T r) { return l + r; };
-  int n;
+  using type = T;
+  using MT = function<T(const T&, const T&)>;
+  const int n;
+  const T unit;
+  const MT merge;
   vector<T> data;
-  ST(int n) : n(n), data(2 * n) {}
-  ST(vector<T>& v) : n(SZ(v)), data(2 * SZ(v)) {
-    copy(ALL(v), data.begin() + SZ(v));
+  ST(int n, T unit, MT merge)
+    : n{n}, unit{unit}, merge{merge}, data(2 * n, unit) {}
+  ST(const vector<T>& v, T unit, MT merge)
+    : n{SZ(v)}, unit{unit}, merge{merge}, data(SZ(v), unit) {
+    data.insert(data.end(), ALL(v));
     build();
   }
   void build() {
@@ -118,64 +122,61 @@ struct ST {
       data[i >> 1] = merge(data[i & ~1], data[i | 1]);
   }
 };
-
+template<typename T>
 struct HLD {
   int n;
-  vi par, sz, height;
+  vi par, sz, height, in, pos;
   vvi paths;
-  vi in, pos;
-  ST st;
-  HLD(vvi& adj, vector<ll> val, int root = 0)
-    : n{SZ(adj)}, par(n), sz(n, 1), height(n), in(n), pos(n), st{n} {
+  ST<T> st;
+  HLD(vvi& adj, const vector<T>& val,
+      T unit, typename ST<T>::MT merge, int root = 0)
+    : n{SZ(adj)}, par(n), sz(n, 1), height(n), in(n), pos(n),
+      st{n, unit, merge} {
     dfssz(adj, root);
-    forward_list<int> order;
+    vi order;
     dfsbuild(adj, root, order);
     int j = 0;
-    for (int i : order) {
-      for (int v : paths[i]) {
-        st.data[st.n + (pos[v] = j++)] = val[v];
-      }
-    }
+    for (auto it = order.crbegin(); it != order.crend(); ++it)
+      for (int v : paths[*it]) st.data[st.n + (pos[v] = j++)] = val[v];
     st.build();
   }
-  void dfssz(vvi& adj, int v, int h = 0, int p = -1) {
-    par[v] = p;
-    height[v] = h;
-    for (int u : adj[v]) {
-      if (p != u) {
-        dfssz(adj, u, h + 1, v);
-        sz[v] += sz[u];
-      }
-    }
+  int dfssz(vvi& adj, int v, int h = 0, int p = -1) {
+    par[v] = p; height[v] = h;
+    for (int u : adj[v])
+      if (p != u) sz[v] += dfssz(adj, u, h + 1, v);
+    return sz[v];
   }
-  void dfsbuild(vvi& adj, int v, forward_list<int>& order, int p = -1, bool heavy = false) {
-    if (heavy) {
-      paths[in[v] = in[p]].pb(v);
-    } else {
+  void dfsbuild(vvi& adj, int v, vi& order, int p = -1, bool hvy = false) {
+    if (hvy) paths[in[v] = in[p]].pb(v); 
+    else {
       in[v] = SZ(paths);
       paths.pb({v});
     }
+    int h = -1;
     for (int u : adj[v])
-      if (p != u) dfsbuild(adj, u, order, v, sz[u] > sz[v] / 2);
-    if (paths[in[v]][0] == v) {
-      order.push_front(in[v]);
-    }
+      if (p != u) {
+        if (sz[u] > sz[v] / 2) h = u;
+        else dfsbuild(adj, u, order, v);
+      }
+    if (~h) dfsbuild(adj, h, order, v, true);
+    if (paths[in[v]][0] == v) order.pb(in[v]);
   }
-  void update(int v, ST::T val) { st.update(pos[v], val); }
-  ST::T queryPath(int a, int b) {
-    ST::T v = st.unit;
+  void update(int v, T val) { st.update(pos[v], val); }
+  T queryPath(int a, int b) {
+    T v = st.unit;
     while (in[a] != in[b]) {
-      if (height[a] < height[b]) swap(a, b);
+      if (height[paths[in[a]][0]] < height[paths[in[b]][0]]) swap(a, b);
       v = st.merge(v, st.query(pos[paths[in[a]][0]], pos[a] + 1));
       a = par[paths[in[a]][0]];
     }
     if (height[a] > height[b]) swap(a, b);
     return st.merge(v, st.query(pos[a], pos[b] + 1));
   }
-  ST::T querySubtree(int v) {
+  T querySubtree(int v) {
     return st.query(pos[v], pos[v] + sz[v]);
   }
 };
+
 
 int main() {
   ios_base::sync_with_stdio(0);
@@ -183,7 +184,7 @@ int main() {
 
   int n, q; cin >> n >> q;
   vvi adj(n + 1);
-  vector<ST::T> val(n + 1);
+  vector<ll> val(n + 1);
   FOR (i, 1, n + 1) {
     cin >> val[i];
   }
@@ -192,7 +193,7 @@ int main() {
     adj[a].pb(b); adj[b].pb(a);
   }
 
-  HLD hld(adj, val, 1);
+  HLD<ll> hld(adj, val, 0, [](ll a, ll b) { return a + b; }, 1);
 
   while (q--) {
     int t; cin >> t;

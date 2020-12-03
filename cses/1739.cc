@@ -90,34 +90,45 @@ void tprint(vector<vector<T>>& v, size_t width = 0, ostream& o = cerr) {
   }
 }
 
-struct FT2D {
-  struct FT {
-    vi A;
-    int n;
-    FT(int n) : A(n + 1, 0), n(n) {}
-    int inline LSOne(int i) { return i & (-i); }
-    int query(int i) {
-      int sum = 0;
-      for (; i; i -= LSOne(i)) sum += A[i];
-      return sum;
-    }
-    int query(int i, int j) { return query(j) - query(i - 1); }
-    void update(int i, int adjustBy) {
-      for (; i <= n; i += LSOne(i)) A[i] += adjustBy;
-    }
-  };
-  vector<FT> fts;
+template<typename T>
+struct FT {
+  vector<T> A;
   int n;
-  FT2D(int n, int m) : fts(n + 1, FT(m)), n(n) {};
-  int inline LSOne(int i) { return i & (-i); }
-  int query(int i, int j1, int j2) {
-    int sum = 0;
-    for (; i; i -= LSOne(i)) sum += fts[i].query(j1, j2);
+  FT(int n) : A(n + 1, 0), n(n) {}
+  T query(int i) {
+    T sum = 0;
+    for (; i; i -= i & -i) sum += A[i];
     return sum;
   }
-  int query(int i1, int i2, int j1, int j2) { return query(i2, j1, j2) - query(i1 - 1, j1, j2); }
-  void update(int i, int j, int val) {
-    for (; i <= n; i += LSOne(i)) fts[i].update(j, val);
+  T query(int i, int j) { return query(j) - query(i - 1); }
+  void update(int i, T add) {
+    for (; i <= n; i += i & -i) A[i] += add;
+  }
+  // lb assumes query(i, i) >= 0 forall i in [1, n]
+  // returns min p >= 1, so that [1, p] >= sum
+  // if [1, n] < sum, return n + 1
+  int lb(T sum) {
+    int pos = 0;
+    for (int pw = 1 << 25; pw; pw >>= 1)
+      if (pos + pw <= n && sum > A[pos | pw]) sum -= A[pos |= pw];
+    return pos + !!sum;
+  }
+};
+template<typename T>
+struct FT2D {
+  vector<FT<T>> fts;
+  int n;
+  FT2D(int n, int m) : fts(n + 1, FT<T>(m)), n(n) {};
+  T query(int i, int j1, int j2) {
+    T sum = 0;
+    for (; i; i -= i & -i) sum += fts[i].query(j1, j2);
+    return sum;
+  }
+  T query(int i1, int i2, int j1, int j2) {
+    return query(i2, j1, j2) - query(i1 - 1, j1, j2);
+  }
+  void update(int i, int j, T add) {
+    for (; i <= n; i += i & -i) fts[i].update(j, add);
   }
 };
 
@@ -127,7 +138,7 @@ int main() {
   cout.tie(0); cin.tie(0);
 
   int n, q; cin >> n >> q;
-  FT2D ft(n, n);
+  FT2D<int> ft(n, n);
   vector<string> m(n); F0R (i, n) cin >> m[i];
   F0R (i, n) F0R (j, n) if (m[i][j] == '*') ft.update(i + 1, j + 1, 1);
   while (q--) {
