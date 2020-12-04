@@ -311,14 +311,14 @@ map<string, function<bool(const string&)>> vs{
   }},
   {"pid",  [](const string& s) -> bool {
     if (SZ(s) != 9) return false;
-    for (char c : s) {
+    for (char c : s) { 
       if (not isdigit(c)) return false;
     }
     return true;
   }}};
 
 #include "pps.cc"
-
+ 
 int main() {
   ios_base::sync_with_stdio(0);
   cin.tie(0);

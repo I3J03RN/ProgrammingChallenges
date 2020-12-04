@@ -1,44 +1,25 @@
 struct pps : vector<map<string, string>> {
-  pps(vector<string> ss, const string& lsep = "", char csep = ':') {
-    vector<string> ps = concatLines(ss, lsep);
-    for (const string& s : ps) {
-      push_back(parse(s, csep));
-    }
-  }
-  vector<string> concatLines(const vector<string>& ss, const string& sep) {
-    vector<string> ps;
-    string s;
-    F0R (i, SZ(ss)) {
-      if (ss[i] == sep && s != "") {
-        ps.pb(s);
-        s = "";
+  pps(const vector<string>& ss, const string& lsep = "", char csep = ':') {
+    map<string, string> cur;
+    F0R (i, SZ(ss) + 1) {
+      if (i == SZ(ss) || ss[i] == lsep) {
+        if (not cur.empty()) pb(cur);
+        cur.clear();
       }
-      s += " " + ss[i];
-    }
-    if (s != "") ps.pb(s);
-    return ps;
-  }
-  map<string, string> parse(const string& s, char sep) {
-    map<string, string> m;
-    string k, v;
-    int p = 0;
-    F0R (i, SZ(s) + 1) {
-      char c = i < SZ(s) ? s[i] : ' ';
-      if (isspace(c)) {
-        if (p) m[k] = v;
-        p = 0;
-        k = v = "";
-      } else if (c == sep && p == 0) {
-        ++p;
-      } else {
-        if (p) {
-          v += c;
+      string k, v; int p = 0;
+      F0R (j, SZ(ss[i]) + 1) {
+        char c = j < SZ(ss[i]) ? ss[i][j] : ' ';
+        if (isspace(c)) {
+          if (p) cur[k] = v;
+          p = 0;
+          k = v = "";
+        } else if (c == csep && p == 0) {
+          ++p;
         } else {
-          k += c;
+          (p ? v : k) += c;
         }
       }
     }
-    return m;
   }
   template<typename F>
   int ck(F f) {
