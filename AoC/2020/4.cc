@@ -276,20 +276,17 @@ int sstoi(const string& s) {
   }
 }
 
-map<string, function<bool(const string&)>> vs{
-  {"byr", [](const string& s) -> bool {
-    if (SZ(s) != 4) return false;
-    return in(1920, sstoi(s), 2002);
+map<string, function<int(const string&)>> vs{
+  {"byr", [](const string& s) -> int {
+    return SZ(s) == 4 && in(1920, sstoi(s), 2002);
   }},
-  {"iyr", [](const string& s) -> bool {
-    if (SZ(s) != 4) return false;
-    return in(2010, sstoi(s), 2020);
+  {"iyr", [](const string& s) -> int {
+    return SZ(s) == 4 && in(2010, sstoi(s), 2020);
   }},
-  {"eyr", [](const string& s) -> bool {
-    if (SZ(s) != 4) return false;
-    return in(2020, sstoi(s), 2030);
+  {"eyr", [](const string& s) -> int {
+    return SZ(s) == 4 && in(2020, sstoi(s), 2030);
   }},
-  {"hgt", [](const string& s) -> bool {
+  {"hgt", [](const string& s) -> int {
     if (SZ(s) < 3) return false;
     string unit = s.substr(SZ(s) - 2);
     int n = sstoi(s.substr(0, SZ(s) - 2));
@@ -301,20 +298,15 @@ map<string, function<bool(const string&)>> vs{
       return false;
     }
   }},
-  {"hcl", [](const string& s) -> bool {
-    if (SZ(s) != 7 || s[0] != '#') return false;
-    return all_of(1 + ALL(s), [](char c) { return isdigit(c) || in('a', c, 'f'); }); // 
+  {"hcl", [](const string& s) -> int {
+    return SZ(s) == 7 && s[0] == '#' && all_of(1 + ALL(s), [](char c) { return isdigit(c) || in('a', c, 'f'); });
   }},
-  {"ecl", [](const string& s) -> bool {
+  {"ecl", [](const string& s) -> int {
     static set<string> vs{"amb", "blu", "brn", "gry", "grn", "hzl", "oth"};
     return vs.count(s);
   }},
-  {"pid",  [](const string& s) -> bool {
-    if (SZ(s) != 9) return false;
-    for (char c : s) { 
-      if (not isdigit(c)) return false;
-    }
-    return true;
+  {"pid",  [](const string& s) -> int {
+    return SZ(s) == 9 && all_of(ALL(s), [](char c) { return isdigit(c); });
   }}};
 
 #include "pps.cc"
