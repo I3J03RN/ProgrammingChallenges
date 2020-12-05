@@ -263,67 +263,42 @@ vector<string> input(F f) {
   return ss;
 }
 
-template<typename T>
-bool in(T lb, T n, T hb) { return lb <= n && n <= hb; }
 
-int sstoi(const string& s) {
-  try {
-    return stoi(s);
-  } catch (const exception&) {
-    return -1337;
-  }
-}
-
-map<string, function<int(const string&)>> vs{
-  {"byr", [](const string& s) -> int {
-    return SZ(s) == 4 && in(1920, sstoi(s), 2002);
-  }},
-  {"iyr", [](const string& s) -> int {
-    return SZ(s) == 4 && in(2010, sstoi(s), 2020);
-  }},
-  {"eyr", [](const string& s) -> int {
-    return SZ(s) == 4 && in(2020, sstoi(s), 2030);
-  }},
-  {"hgt", [](const string& s) -> int {
-    if (SZ(s) < 3) return false;
-    string unit = s.substr(SZ(s) - 2);
-    int n = sstoi(s.substr(0, SZ(s) - 2));
-    if (unit == "in") {
-      return in(59, n, 76);
-    } else if (unit == "cm") {
-      return in(150, n, 193);
-    } else {
-      return false;
-    }
-  }},
-  {"hcl", [](const string& s) -> int {
-    return SZ(s) == 7 && s[0] == '#' && all_of(1 + ALL(s), [](char c) { return isdigit(c) || in('a', c, 'f'); });
-  }},
-  {"ecl", [](const string& s) -> int {
-    static set<string> vs{"amb", "blu", "brn", "gry", "grn", "hzl", "oth"};
-    return vs.count(s);
-  }},
-  {"pid",  [](const string& s) -> int {
-    return SZ(s) == 9 && all_of(ALL(s), [](char c) { return isdigit(c); });
-  }}};
-
-#include "pps.cc"
- 
 int main() {
   ios_base::sync_with_stdio(0);
   cin.tie(0);
 
-  pps ps(input([&](auto&){}));
-  cout << ps.ck([](const auto& m) {
-    int cnt = 0;
-    for (const auto& [k, v] : m) cnt += vs.count(k);
-    return cnt == 7;
-  }) << endl;
-  cout << ps.ck([](const auto& m) {
-    int cnt = 0;
-    for (const auto& [k, v] : m) cnt += vs.count(k) && vs[k](v);
-    return cnt == 7;
-  }) << endl;
-  
+  ll res = 0;
+  vi v;
+  input([&](auto& in) {
+    string s; in >> s;
+    int l = 0, r = 127;
+    F0R (i, 7) {
+      if (s[i] == 'F') {
+        r = (l + r) / 2;
+      } else {
+        l = (l + r + 1) / 2;
+      }
+    } 
+    int f = l;
+    l = 0; r = 7;
+    FOR (i, 7, 10) {
+      if (s[i] == 'L') {
+        r = (l + r) / 2;
+      } else {
+        l = (l + r + 1) / 2;
+      }
+    } 
+    ckmax(res,(ll) f * 8 + l);
+    v.pb(f * 8 + l);
+  });
+  cout << res << endl;
+  sort(ALL(v));
+  F0R (i, SZ(v) - 1) {
+    if (v[i] + 1 < v[i + 1]) {
+      cout << v[i] + 1 << endl;
+    }
+  }
+
   return 0;
 }
