@@ -279,10 +279,11 @@ int main() {
       cur.clear();
       res2 += SZ(cur2);
       cur2 = base;
-    }
-    for (char c : ss[i]) cur.insert(c);
-    if(ss[i] != "") for (char c = 'a'; c <= 'z'; ++c) {
-      if (find(ALL(ss[i]), c) == ss[i].end()) cur2.erase(c);
+    } else {
+      cur.insert(ALL(ss[i]));
+      set<char> s, s2(ALL(ss[i]));
+      set_intersection(ALL(cur2), ALL(s2), inserter(s, s.begin()));
+      cur2.swap(s);
     }
   }
   cout << res << endl;
