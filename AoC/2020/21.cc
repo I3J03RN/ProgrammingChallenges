@@ -264,10 +264,30 @@ vector<string> input(F f) {
 }
 
 template<typename T>
-set<T> inter(const set<T>& s1, const set<T>& s2) {
-  set<T> out;
-  set_intersection(ALL(s1), ALL(s2), inserter(out, out.begin()));
-  return out;
+set<T>& operator+=(set<T>& s, const T& e) {
+  return s.insert(e), s;
+}
+template<typename T>
+set<T>& operator-=(set<T>& s, const T& e) {
+  return s.erase(e), s;
+}
+template<typename T>
+set<T>& operator&=(set<T>& a, const set<T>& b) {
+  set<T> o;
+  set_intersection(ALL(a), ALL(b), inserter(o, o.begin()));
+  return a.swap(o), a;
+}
+template<typename T>
+set<T>& operator|=(set<T>& a, const set<T>& b) {
+  return a.insert(ALL(b)), a;
+}
+template<typename T>
+set<T> operator&(set<T> a, const set<T>& b) {
+  return a &= b;
+}
+template<typename T>
+set<T> operator|(set<T> a, const set<T>& b) {
+  return a |= b;
 }
 
 int main() {
@@ -285,12 +305,12 @@ int main() {
         f = false;
       } else {
         if (f) {
-          ss.insert(s);
+          ss += s;
           ++cnt[s];
         } else {
           s = s.substr(0, SZ(s) - 1);
           if (have.count(s)) {
-            have[s] = inter(ss, have[s]);
+            have[s] &= ss;
           } else {
             have[s] = ss;
           }
@@ -319,7 +339,7 @@ int main() {
         break;
       }
     }
-    for (auto& [_, ss] : have) ss.erase(s);
+    for (auto& [_, ss] : have) ss -= s;
   }
   string out = "";
   for (const auto& [_, s] : res2) out += s + ",";
