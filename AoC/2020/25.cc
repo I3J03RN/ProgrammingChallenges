@@ -263,91 +263,27 @@ vector<string> input(F f) {
   return ss;
 }
 
-template<typename T>
-set<T>& operator+=(set<T>& s, const T& e) {
-  return s.insert(e), s;
-}
-template<typename T>
-set<T>& operator-=(set<T>& s, const T& e) {
-  return s.erase(e), s;
-}
-template<typename T>
-set<T>& operator&=(set<T>& a, const set<T>& b) {
-  set<T> o;
-  set_intersection(ALL(a), ALL(b), inserter(o, o.begin()));
-  return a.swap(o), a;
-}
-template<typename T>
-set<T>& operator|=(set<T>& a, const set<T>& b) {
-  return a.insert(ALL(b)), a;
-}
-template<typename T>
-set<T> operator&(set<T> a, const set<T>& b) {
-  return a &= b;
-}
-template<typename T>
-set<T> operator|(set<T> a, const set<T>& b) {
-  return a |= b;
-}
-template<typename T>
-bool operator<(const set<T>& s, const T& e) {
-  return static_cast<bool>(s.count(e));
-}
 
 int main() {
   ios_base::sync_with_stdio(0);
   cin.tie(0);
 
-  set<ii> ts;
+  ll card = -1, door;
   input([&](auto& in){
-    string s; in >> s;
-    ii p;
-    F0R (i, SZ(s)) {
-      if (s[i] == 'e') {
-        ++p.fi;
-      } else if (s[i] == 'w') {
-        --p.fi;
-      } else if (s[i] == 's') {
-        ++i;
-        ++p.se;
-        if (s[i] == 'w') {
-          --p.fi;
-        }
-      } else {
-        ++i;
-        --p.se;
-        if (s[i] == 'e') {
-          ++p.fi;
-        }
-      }
-    }
-    if (ts < p) {
-      ts -= p;
+    if (card == -1) {
+      in >> card;
     } else {
-      ts += p;
+      in >> door;
     }
   });
-  cout << SZ(ts) << endl;
-  F0R (_, 100) {
-    set<ii> nw;
-    FOR (r, -150, 151) {
-      FOR (c, -150, 151) {
-        int cnt = 0;
-        array<int, 6> dr{0, 1, 1, 0, -1, -1}, dc{-1, -1, 0, 1, 1, 0};
-        F0R (i, 6) {
-          int rr = r + dr[i], cc = c + dc[i];
-          cnt += ts < mp(rr, cc);
-        }
-        if (ts < mp(r, c)) {
-          if (cnt == 1 || cnt == 2) nw += mp(r, c);
-        } else {
-          if (cnt == 2) nw += mp(r, c);
-        }
-      }
-    }
-    ts.swap(nw);
-  }
-  cout << SZ(ts) << endl;
+  auto gls = [](ll n, ll sn) {
+    ll i = 0;
+    for (ll v = 1; v != n; v = v * sn % 20201227) ++i;
+    return i;
+  };
+  ll res = 1;
+  for (ll g = gls(door, 7), _ = 0; _ < g; ++_) res = res * card % 20201227;
+  cout << res << endl;
   
   return 0;
 }
