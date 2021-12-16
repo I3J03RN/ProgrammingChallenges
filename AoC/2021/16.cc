@@ -311,7 +311,7 @@ vector<string> input(F f) {
   return ss;
 }
 
-#undef endl
+#define fn(x, b) [](auto x) { return b; }
 
 string hex(string s) {
   vector<string> v{"0000", "0001", "0010", "0011", "0100", "0101", "0110", "0111", "1000", "1001", "1010", "1011", "1100", "1101", "1110", "1111"}; 
@@ -327,7 +327,6 @@ string hex(string s) {
 
 ll conv(string s) {
   ll res = 0;
-  reverse(ALL(s));
   for (char c : s) {
     res <<= 1;
     if (c == '1') res |= 1;
@@ -335,10 +334,8 @@ ll conv(string s) {
   return res;
 } 
 
-pair<ll, string> parse(string s) {
-  int v = conv(s.substr(0, 3));
-  int t = conv(s.substr(3, 3));
-  dout << dvar(v, t) << endl;
+pair<pair<ll, ll>, string> parse(string s) {
+  int v = conv(s.substr(0, 3)), t = conv(s.substr(3, 3));
   s = s.substr(6);
   if (t == 4) {
     ll val = 0; 
@@ -349,35 +346,44 @@ pair<ll, string> parse(string s) {
       val |= conv(b.substr(1));
       if (b[0] == '0') break;
     }
-    dout << dvar(val) << endl;
-    // s = s.substr(4 - (2 + 5 * bs) % 4);
-    return {v, s};
+    return {{v, val}, s};
   } else {
     int i = conv(s.substr(0, 1));
-    dout << dvar(i) << endl;
     s = s.substr(1);
+    vector<ll> ps;
     if (i) {
       int n = conv(s.substr(0, 11));
-      dout << dvar(n) << endl;
       s = s.substr(11);
       F0R (_, n) {
-        auto [vp, ss] = parse(s);
-        v += vp;
+        auto [vs, ss] = parse(s);
+        v += vs.fi;
+        ps.pb(vs.se);
         s = ss;
       }
     } else {
       int n = conv(s.substr(0, 15));
       s = s.substr(15);
       string subs = s.substr(0, n);
-      dout << dvar(n) << endl;
       s = s.substr(n);
       while (SZ(subs)) {
-        auto [vp, ss] = parse(subs);
-        v += vp;
+        auto [vs, ss] = parse(subs);
+        v += vs.fi;
+        ps.pb(vs.se);
         subs = ss;
       }
     }
-    return {v, s};
+    array<function<ll(vector<ll>)>, 8> f {
+      fn(vs, accumulate(ALL(vs), 0ll))
+    , fn(vs, accumulate(ALL(vs), 1ll, multiplies<ll>()))
+    , fn(vs, *min_element(ALL(vs)))
+    , fn(vs, *max_element(ALL(vs)))
+    , fn(, 0)
+    , fn(vs, vs[0]  > vs[1])
+    , fn(vs, vs[0]  < vs[1])
+    , fn(vs, vs[0] == vs[1])
+    };
+
+    return {{v, f[t](ps)}, s};
   }
 }
 
@@ -386,8 +392,8 @@ int main() {
   cin.tie(0);
 
   string in = input([&](auto&){})[0];
-  cout << hex(in) << endl;
-  cout << parse(hex(in)) << endl;
+  auto [res, _] = parse(hex(in));
+  cout << res.fi << endl << res.se << endl;
   
   return 0;
 }
