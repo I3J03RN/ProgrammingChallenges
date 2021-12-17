@@ -372,8 +372,8 @@ pair<pair<ll, ll>, string> parse(string s) {
         subs = ss;
       }
     }
-    array<function<ll(vector<ll>)>, 8> f {
-      fn(vs, accumulate(ALL(vs), 0ll))
+    array<function<ll(vector<ll>)>, 8> f
+    { fn(vs, accumulate(ALL(vs), 0ll))
     , fn(vs, accumulate(ALL(vs), 1ll, multiplies<ll>()))
     , fn(vs, *min_element(ALL(vs)))
     , fn(vs, *max_element(ALL(vs)))
