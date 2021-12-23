@@ -320,8 +320,7 @@ int main() {
   vector<string> m = input([&](auto&){});
 
   auto print = [](const vi& v, const vvi& rs) -> void {
-    dout << dvar(v, rs) << endl;
-    dout << string(13, '#') << endl;
+    cout << string(13, '#') << endl;
     string hall(11, '.');
     int bs = SZ(rs[0]);
     FOR (i, 4, SZ(v)) {
@@ -329,23 +328,26 @@ int main() {
         hall[(i - 4) * 2 - 1 + (i == 4 ? 1 : (i == SZ(v) - 1 ? -1 : 0))] = 'A' + v[i];
       }
     }
-    dout << '#' << hall << '#' <<  endl;
+    cout << '#' << hall << '#' <<  endl;
     F0R (i, bs) {
-      dout << "###";
+      cout << "###";
       F0R (j, 4) {
-        if (-v[j] >= bs - i) cout << (char)('A' + j);
-        else if (v[j] >= bs - i) cout << (char)('A' + rs[j][i]);
-        else cout << '.';
+        if (-v[j] >= bs - i) {
+          cout << (char)('A' + j);
+        } else if (v[j] >= bs - i) {
+          cout << (char)('A' + rs[j][bs - 1 - i]);
+        } else {
+          cout << '.';
+        }
         cout << '#';
       }
-      dout << "##" << endl;;
+      cout << "##" << endl;;
     }
-    dout << string(13, '#') << endl;
+    cout << string(13, '#') << endl;
   };
 
   auto solve = [&print](vector<string> m) -> ll {
     constexpr array<int, 4> cost{1, 10, 100, 1000};
-    cout << pp(m, "\n") << endl;
     vvi rs(4);
     F0R (i, SZ(m) - 3) {
       int j = 0;
@@ -367,16 +369,27 @@ int main() {
 
     while (SZ(q)) {
       auto [d, st] = *q.begin(); q.erase(q.begin());
-      print(st, rs);
-      if (count(st.begin(), st.begin() + 4, -4) == 4) return d;
+      if (count(st.begin(), st.begin() + 4, -bs) == 4) {
+        // vvi go;
+        // vi cs;
+        // for (; SZ(st); st = par[st]) {
+        //   cs.pb(dist[st]);
+        //   go.pb(st);
+        // }
+        // int lst = 0;
+        // for (int i = SZ(go) - 1; ~i; --i) {
+        //   print(go[i], rs);
+        //   lst = cs[i];
+        // }
+        return d;
+      }
       if (dist[st] < d) continue;
       vi o = st;
       F0R (i, 4) {
         if (o[i] > 0) {
           for (int j = 5 + i; j >= 4; --j) {
             if (~o[j]) break;
-            int dd = o[i] + 1 + (5 + i - j + 1) * 2 - 1 - (j == 4);
-            // cout << dvar(cost, rs, o) << endl;
+            int dd = bs - o[i] + 1 + (5 + i - j + 1) * 2 - 1 - (j == 4);
             dd *= cost[rs[i][o[i] - 1]];
             o[j] = rs[i][o[i]---1];
             if (dist.count(o) == 0 or dist[o] > d + dd) {
@@ -387,7 +400,7 @@ int main() {
           }
           for (int j = 5 + i + 1; j < SZ(o); ++j) {
             if (~o[j]) break;
-            int dd = o[i] + 1 + (j - 5 - i) * 2 - 1 - (j == SZ(o) - 1);
+            int dd = bs - o[i] + 1 + (j - 5 - i) * 2 - 1 - (j == SZ(o) - 1);
             dd *= cost[rs[i][o[i]-1]];
             o[j] = rs[i][o[i]---1];
             if (dist.count(o) == 0 or dist[o] > d + dd) {
@@ -401,7 +414,7 @@ int main() {
       FOR (i, 4, SZ(o)) {
         if (~o[i] and o[o[i]] <= 0) {
           bool ok = true;
-          int dd = -o[o[i]];
+          int dd = 1 + bs + o[o[i]];
           if (i <= 5 + o[i]) {
             for (int j = i + 1; j <= 5 + o[i]; ++j) {
               dd += 2;
@@ -444,8 +457,5 @@ int main() {
   m.insert(m.begin() + 3, ALL(p2));
   cout << solve(m) << endl;
 
-
-  
-  
   return 0;
 }
