@@ -318,6 +318,7 @@ int main() {
   ll cur = 0;
   vector<ll> vs;
   vector<string> ins = input([&](auto&) {});
+  ins.pb("");
   for (auto s : ins) {
     if (s == "") {
       vs.pb(cur);
