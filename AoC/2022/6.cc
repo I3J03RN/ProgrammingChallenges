@@ -340,7 +340,7 @@ int main() {
   auto fnd = [&](int n) -> int {
     F0R (i, SZ(s)) {
       string ss = s.substr(i, n);
-      if (SZ(set<char>(ALL(ss))) == n) {
+      if (SZ(set(ALL(ss))) == n) {
         return i + n;
       }
     }
