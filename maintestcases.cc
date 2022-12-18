@@ -13,6 +13,6 @@ int main() {
     // cout << "Case #" << t << ": ";
     solve();
   }
-  
+
   return 0;
 }
