@@ -692,8 +692,7 @@ int main() {
     F0R (i, SZ(vs) - 1) {
       nx.pb(vs[i + 1] - vs[i]);
     }
-    auto [b, f] = self(nx);
-    return {vs.back() + b, vs.front() - f};
+    return mp(vs.back(), vs.front()) + mp(1, -1) * self(nx);
   });
 
   pair<ll, ll> sm = {0, 0};
