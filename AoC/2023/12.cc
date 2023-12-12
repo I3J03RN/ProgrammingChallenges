@@ -361,14 +361,10 @@ int main() {
     dp[SZ(s)][SZ(vs)] = 1;
     for (int j = SZ(s) - 1; j >= 0; --j) {
       F0R (k, SZ(vs) + 1) {
-        if (s[j] == '.') {
-          dp[j][k] = dp[j + 1][k];
-        } else if (s[j] == '?') {
-          dp[j][k] = dp[j + 1][k]; // -> .
-          if (k < SZ(vs) and count(s.begin() + j, s.begin() + j + vs[k], '.') == 0 and s[j + vs[k]] != '#') {
-            dp[j][k] += dp[j + vs[k] + 1][k + 1]; // -> #
-          }
-        } else {
+        if (s[j] == '.' or s[j] == '?') {
+          dp[j][k] += dp[j + 1][k]; // -> .
+        }
+        if (s[j] == '?' or s[j] == '#') {
           if (k < SZ(vs) and count(s.begin() + j, s.begin() + j + vs[k], '.') == 0 and s[j + vs[k]] != '#') {
             dp[j][k] += dp[j + vs[k] + 1][k + 1]; // -> #
           }
