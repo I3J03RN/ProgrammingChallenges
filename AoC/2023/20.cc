@@ -710,13 +710,16 @@ int main() {
     for (auto t : ts) prev[t].pb(n);
   }
 
-  auto rst = [&mem, &targets]() -> void {
+  auto rst = [&mem, &targets, &type]() -> void {
+    for (auto [n, t] : type) {
+      if (t == '%') mem[n][n] = 0;
+    }
     for (auto [n, ts] : targets) {
       for (auto t : ts) mem[t][n] = 0;
     }
   };
 
-  auto go = [&]() -> pair<ll, ll> {
+  auto go = [&](string cntn, ll& cnt) -> pair<ll, ll> {
     vector<ll> ps(2, 0);
 
     // to, value, from, fvalue
@@ -726,6 +729,7 @@ int main() {
     while (not q.empty()) {
       auto [n, v, fn] = q.front(); q.pop();
       ++ps[v];
+      if (fn == cntn and not v) ++cnt;
       if (not type.count(n)) continue;
       if (type[n] == '%') {
         if (v) continue;
@@ -754,31 +758,32 @@ int main() {
 
   auto gon = [&](int n = 1000) -> ll {
     rst();
+    ll no;
     pair<ll, ll> res;
-    F0R (_, n) res += go();
+    F0R (_, n) res += go("", no);
     return res.fi * res.se;
   };
 
   cout << gon() << endl;
 
-  // auto solve = y_combinator([&](auto self, string n, bool p) -> ll {
-  //   if (n == "rx") {
-  //     vector<ll> a;
-  //     for (auto s : prev) a.pb(self(s, p));
-  //     return *min_element(ALL(a));
-  //   } else if (type[n] == '&') {
-  //     return -1;
-  //   } else if (type[n] == '%') {
-  //     return -1;
-  //   } else if (type[n] == 'b') {
-  //     return -1;
-  //   } else {
-  //     assert(false);
-  //     return -1;
-  //   }
-  // });
-  rst();
+  auto gocnt = [&](string cntn, int n) -> ll {
+    rst();
+    ll cnt = 0;
+    F0R (_, n) go(cntn, cnt);
+    return cnt;
+  };
 
+
+  // calculated by hand
+  cout << dvar(gocnt("vm", 3862), gocnt("vm", 3863)) << endl;
+  cout << dvar(gocnt("dn", 3796), gocnt("dn", 3797)) << endl;
+  cout << dvar(gocnt("kb", 3930), gocnt("kb", 3931)) << endl;
+  cout << dvar(gocnt("vk", 3768), gocnt("vk", 3769)) << endl;
+
+  vector<ll> circs{3863, 3797, 3931, 3769};
+  ll res = 1;
+  for (ll i : circs) res = lcm(res, i);
+  cout << res << endl;
 
   return 0;
 }
