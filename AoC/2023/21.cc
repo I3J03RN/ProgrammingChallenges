@@ -331,25 +331,6 @@ vector<string> input(F f) {
   return ss;
 }
 
-// for c++14 and above;  explicitly specify the return type of the lambda
-// links:
-//  1. https://stackoverflow.com/a/40873657
-//  2. http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2016/p0200r0.html
-template<typename F>
-struct y_combinator_result {
-  F f;
-  template<typename T>
-  explicit y_combinator_result(T&& fun) : f(std::forward<T>(fun)) {}
-  template<typename... Args>
-  decltype(auto) operator()(Args&&... args) {
-    return f(ref(*this), std::forward<Args>(args)...);
-  }
-};
-template<typename F>
-decltype(auto) y_combinator(F&& f) {
-  return y_combinator_result<decay_t<F>>(std::forward<F>(f));
-}
-
 
 ///////////////////////////////////////////////////////////////
 // Utility functions.
@@ -673,112 +654,132 @@ template <typename... Ts> tuple<Ts...> operator+(tuple<Ts...> t) {
   return t;
 }
 
-#undef endl
-
 int main() {
   ios_base::sync_with_stdio(0);
   cin.tie(0);
 
-  map<string, char> type;
-  map<string, vector<string>> targets;
-  map<string, vector<string>> prev;
-  map<string, map<string, bool>> mem;
-  set<map<string, map<string, bool>>> mems;
+  constexpr array<ii, 4> d{{{0, 1}, {1, 0}, {0, -1}, {-1, 0}}};
 
-  auto in = input([&](auto& ss) {
-    string n, s;
-    ss >> n >> s;
-    if (n == "broadcaster") {
-      type[n] = 'b';
-    } else {
-      type[n.substr(1)] = n[0];
-      n = n.substr(1);
-    }
-    bool ok = true;
-    while (ok) {
-      ss >> s;
-      if (s.back() != ',') {
-        ok = false;
-      } else {
-        s.pop_back();
-      }
-      targets[n].pb(s);
-    }
-  });
+  auto in = input([&](auto&) {});
 
-  for (auto [n, ts] : targets) {
-    for (auto t : ts) prev[t].pb(n);
-  }
+  const int R = SZ(in);
+  const int C = SZ(in[0]);
 
-  auto rst = [&mem, &targets]() -> void {
-    for (auto [n, ts] : targets) {
-      for (auto t : ts) mem[t][n] = 0;
-    }
+  cout << dvar(in[R / 2][C / 2]) << endl;
+  assert(in[R / 2][C / 2] == 'S');
+  ii s{C / 2, R / 2};
+  in[s.se][s.fi] = '.';
+
+  auto ok = [&](ii p) -> bool {
+    auto [x, y] = p;
+    return 0 <= min(x, y) and x < C and y < R and in[y][x] != '#'; // in[(y % SZ(in) + SZ(in)) % SZ(in)][(x % SZ(in[0]) + SZ(in[0])) % SZ(in[0])] != '#';
   };
 
-  auto go = [&]() -> pair<ll, ll> {
-    vector<ll> ps(2, 0);
-
-    // to, value, from, fvalue
-    queue<tuple<string, bool, string>> q;
-    q.emplace("broadcaster", 0, "");
-
+  set<ii> reachable = [&](ii p) -> set<ii> {
+    queue<ii> q;
+    set<ii> seen;
+    q.push(p);
+    seen += p;
     while (not q.empty()) {
-      auto [n, v, fn] = q.front(); q.pop();
-      ++ps[v];
-      if (not type.count(n)) continue;
-      if (type[n] == '%') {
-        if (v) continue;
-        mem[n][n] = not mem[n][n];
-        for (auto t : targets[n]) {
-          q.emplace(t, mem[n][n], n);
-        }
-      } else if (type[n] == '&') {
-        mem[n][fn] = v;
-        bool ok = true;
-        for (auto [_, vv] : mem[n]) {
-          ok = ok && vv;
-        }
-        for (auto t : targets[n]) {
-          q.emplace(t, not ok, n);
-        }
-      } else {
-        for (auto t : targets[n]) {
-          q.emplace(t, v, n);
+      ii c = q.front(); q.pop();
+      F0R (i, 4) {
+        ii cc = c + d[i];
+        if (ok(cc) and not (seen < cc)) {
+          q.push(cc);
+          seen += cc;
         }
       }
     }
+    return seen;
+  }(s);
 
-    return {ps[0], ps[1]};
+  auto parity = [](ii p) -> int {
+    return (abs(p.fi) + abs(p.se)) % 2;
   };
 
-  auto gon = [&](int n = 1000) -> ll {
-    rst();
-    pair<ll, ll> res;
-    F0R (_, n) res += go();
-    return res.fi * res.se;
+  F0R (r, R) F0R (c, C) if (in[r][c] == '.' and not (reachable < mp(c, r))) in[r][c] = '#';
+
+  vi cnt(2);
+  F0R (r, R) F0R (c, C) if (in[r][c] == '.') ++cnt[parity({c - C / 2, r - R / 2})];
+
+  auto go = [&](ii p, ll n) -> ll {
+    vector<ll> nt(n + 1);
+    queue<ii> q;
+    map<ii, int> seen;
+    q.push(p);
+    seen[p] = 0;
+    while (not q.empty()) {
+      ii c = q.front(); q.pop();
+      if (seen[c] > n) break;
+      ++nt[seen[c]];
+      F0R (i, 4) {
+        ii cc = c + d[i];
+        if (ok(cc) and not seen.count(cc)) {
+          q.push(cc);
+          seen[cc] = seen[c] + 1;
+        }
+      }
+    }
+    ll sm = 0;
+    for (; n >= 0; n -= 2) {
+      sm += nt[n];
+    }
+    return sm;
   };
 
-  cout << gon() << endl;
+  cout << go(s, 6) << endl;
+  cout << go(s, 64) << endl;
 
-  // auto solve = y_combinator([&](auto self, string n, bool p) -> ll {
-  //   if (n == "rx") {
-  //     vector<ll> a;
-  //     for (auto s : prev) a.pb(self(s, p));
-  //     return *min_element(ALL(a));
-  //   } else if (type[n] == '&') {
-  //     return -1;
-  //   } else if (type[n] == '%') {
-  //     return -1;
-  //   } else if (type[n] == 'b') {
-  //     return -1;
-  //   } else {
-  //     assert(false);
-  //     return -1;
-  //   }
-  // });
-  rst();
+  // steps: 26501365
 
+
+  auto cntinrng = [&](ii p, int n, bool cn) -> int {
+    if (n < 0) return 0;
+    int sm = 0;
+    set<ii> seen; seen += p;
+    queue<pair<ii, int>> q; q.emplace(p, n);
+    while (not q.empty()) {
+      auto [c, dist] = q.front(); q.pop();
+      sm += (n % 2 == dist % 2) == cn;
+      if (dist > 0) {
+        F0R (i, 4) {
+          ii cc = c + d[i];
+          if (ok(cc) and not (seen < cc)) {
+            q.emplace(cc, dist - 1);
+            seen += c;
+          }
+        }
+      }
+    }
+    return sm;
+  };
+
+  auto calc = [&](int n) -> ll {
+    ll sm = 0;
+    int bigsteps = (n + R - 1) / R;
+    FOR (br, -bigsteps, bigsteps + 1) {
+      int csteps = bigsteps - abs(br);
+      FOR (bc, -csteps, csteps + 1) {
+        if (abs(br) + abs(bc) < bigsteps - 3) {
+          sm += cnt[1 - parity({br, bc})];
+        } else {
+          assert(abs(bc) + abs(br) > 0);
+          if (bc == 0) {
+            sm += cntinrng({C / 2, br > 0 ? 0 : R} , n - (abs(br) - 1) * R - (R + 1) / 2, 1 - abs(br) % 2);
+          } else {
+            if (br == 0) {
+              sm += cntinrng({bc > 0 ? 0 : C, R / 2} , n - (abs(bc) - 1) * C - (C + 1) / 2, 1 - abs(bc) % 2);
+            } else { // br > 0
+              sm += cntinrng({bc > 0 ? 0 : C, br > 0 ? 0 : R}, n - (abs(bc) - 1) * C - (C + 1) / 2 - (abs(br) - 1) * R - (R + 1) / 2, (abs(br) + abs(bc)) % 2);
+            }
+          }
+        }
+      }
+    }
+    return sm;
+  };
+
+  cout << calc(26501365) << endl;
 
   return 0;
 }

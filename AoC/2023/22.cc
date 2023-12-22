@@ -331,25 +331,6 @@ vector<string> input(F f) {
   return ss;
 }
 
-// for c++14 and above;  explicitly specify the return type of the lambda
-// links:
-//  1. https://stackoverflow.com/a/40873657
-//  2. http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2016/p0200r0.html
-template<typename F>
-struct y_combinator_result {
-  F f;
-  template<typename T>
-  explicit y_combinator_result(T&& fun) : f(std::forward<T>(fun)) {}
-  template<typename... Args>
-  decltype(auto) operator()(Args&&... args) {
-    return f(ref(*this), std::forward<Args>(args)...);
-  }
-};
-template<typename F>
-decltype(auto) y_combinator(F&& f) {
-  return y_combinator_result<decay_t<F>>(std::forward<F>(f));
-}
-
 
 ///////////////////////////////////////////////////////////////
 // Utility functions.
@@ -672,6 +653,12 @@ template <typename... Ts> tuple<Ts...> operator+(tuple<Ts...> t) {
   for_each(t, [](auto& x, int) { x = +x; });
   return t;
 }
+template <typename... Ts> tuple<Ts...> operator !(tuple<Ts...> t) {
+  for_each(t, [](auto& x, int) { x = !x; });
+  return t;
+}
+
+using iii = tuple<int, int, int>;
 
 #undef endl
 
@@ -679,106 +666,116 @@ int main() {
   ios_base::sync_with_stdio(0);
   cin.tie(0);
 
-  map<string, char> type;
-  map<string, vector<string>> targets;
-  map<string, vector<string>> prev;
-  map<string, map<string, bool>> mem;
-  set<map<string, map<string, bool>>> mems;
+  vector<pair<iii, iii>> bs;
 
-  auto in = input([&](auto& ss) {
-    string n, s;
-    ss >> n >> s;
-    if (n == "broadcaster") {
-      type[n] = 'b';
-    } else {
-      type[n.substr(1)] = n[0];
-      n = n.substr(1);
-    }
-    bool ok = true;
-    while (ok) {
-      ss >> s;
-      if (s.back() != ',') {
-        ok = false;
-      } else {
-        s.pop_back();
-      }
-      targets[n].pb(s);
-    }
+  input([&](auto& ss) {
+    int a, b, c, d, e, f; char t;
+    ss >> a >> t >> b >> t >> c >> t >> d >> t >> e >> t >> f;
+    bs.eb(mt(a, b, c), mt(d, e, f));
   });
 
-  for (auto [n, ts] : targets) {
-    for (auto t : ts) prev[t].pb(n);
-  }
 
-  auto rst = [&mem, &targets]() -> void {
-    for (auto [n, ts] : targets) {
-      for (auto t : ts) mem[t][n] = 0;
+  // to idx
+  map<iii, int> blocked;
+
+  auto fl = [&blocked](iii a, iii b, int v) -> void {
+    for (auto i = a; i != b; i += !!(b - a)) {
+      blocked[i] = v;
     }
+    blocked[b] = v;
   };
 
-  auto go = [&]() -> pair<ll, ll> {
-    vector<ll> ps(2, 0);
+  F0R (j, SZ(bs)) {
+    auto& [a, b] = bs[j];
+    if (b < a) swap(a, b);
+    assert(a <= b);
+    fl(a, b, j);
+  }
 
-    // to, value, from, fvalue
-    queue<tuple<string, bool, string>> q;
-    q.emplace("broadcaster", 0, "");
+  auto below = [](iii a, iii b) -> vector<iii> {
+    if (get<2>(a) != get<2>(b)) {
+      return vector<iii>({a}) - mt(0, 0, 1);
+    }
 
-    while (not q.empty()) {
-      auto [n, v, fn] = q.front(); q.pop();
-      ++ps[v];
-      if (not type.count(n)) continue;
-      if (type[n] == '%') {
-        if (v) continue;
-        mem[n][n] = not mem[n][n];
-        for (auto t : targets[n]) {
-          q.emplace(t, mem[n][n], n);
+    vector<iii> out;
+    for (auto i = a; i != b; i += !!(b - a)) {
+      out.pb(i);
+    }
+    out.pb(b);
+    return out - mt(0, 0, 1);
+  };
+
+  dout << dvar(bs) << endl;
+
+  vector<bool> rm(SZ(bs));
+
+  auto fall = [&]() -> int {
+    set<int> fell;
+    for (bool change = true; change;) {
+      change = false;
+      F0R (j, SZ(bs)) {
+        if (rm[j]) continue;
+        auto& [a, b] = bs[j];
+        if (get<2>(a) == 1) continue;
+        bool f = true;
+        for (auto i : below(a, b)) {
+          f = f and (not blocked.count(i) or blocked[i] == -1);
         }
-      } else if (type[n] == '&') {
-        mem[n][fn] = v;
-        bool ok = true;
-        for (auto [_, vv] : mem[n]) {
-          ok = ok && vv;
-        }
-        for (auto t : targets[n]) {
-          q.emplace(t, not ok, n);
-        }
-      } else {
-        for (auto t : targets[n]) {
-          q.emplace(t, v, n);
+        if (f) {
+          fell += j;
+          change = true;
+          fl(a, b, -1);
+          a -= mt(0, 0, 1); b -= mt(0, 0, 1);
+          fl(a, b, j);
         }
       }
     }
-
-    return {ps[0], ps[1]};
+    return SZ(fell);
   };
 
-  auto gon = [&](int n = 1000) -> ll {
-    rst();
-    pair<ll, ll> res;
-    F0R (_, n) res += go();
-    return res.fi * res.se;
-  };
+  fall();
 
-  cout << gon() << endl;
+  dout << dvar(bs) << endl;
+  dout << dvar(blocked) << endl;
 
-  // auto solve = y_combinator([&](auto self, string n, bool p) -> ll {
-  //   if (n == "rx") {
-  //     vector<ll> a;
-  //     for (auto s : prev) a.pb(self(s, p));
-  //     return *min_element(ALL(a));
-  //   } else if (type[n] == '&') {
-  //     return -1;
-  //   } else if (type[n] == '%') {
-  //     return -1;
-  //   } else if (type[n] == 'b') {
-  //     return -1;
-  //   } else {
-  //     assert(false);
-  //     return -1;
-  //   }
-  // });
-  rst();
+  vector<set<int>> holds(SZ(bs)), holdby(SZ(bs));
+  F0R (j, SZ(bs)) {
+    auto [a, b] = bs[j];
+    for (auto i : below(a, b)) {
+      if (blocked.count(i) and blocked[i] != -1) {
+        holds[blocked[i]] += j;
+        holdby[j] += blocked[i];
+      }
+    }
+  }
 
+  dout << dvar(holds, holdby) << endl;
+
+  int sm = 0;
+  F0R (i, SZ(bs)) {
+    int ok = 1;
+    for (int k : holds[i]) if (SZ(holdby[k]) == 1) ok = 0;
+    sm += ok;
+  }
+
+  cout << sm << endl;
+
+  ll sm2 = 0;
+
+  F0R (i, SZ(bs)) {
+    auto bl2 = blocked;
+    auto bs2 = bs;
+    rm[i] = true;
+    fl(bs[i].fi, bs[i].se, -1);
+
+    sm2 += fall();
+
+    bl2.swap(blocked);
+    bs2.swap(bs);
+    rm[i] = false;
+  }
+
+  cout << sm2 << endl;
 
   return 0;
 }
