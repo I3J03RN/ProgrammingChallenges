@@ -654,6 +654,8 @@ template <typename... Ts> tuple<Ts...> operator+(tuple<Ts...> t) {
   return t;
 }
 
+#undef endl
+
 int main() {
   ios_base::sync_with_stdio(0);
   cin.tie(0);
@@ -665,7 +667,6 @@ int main() {
   const int R = SZ(in);
   const int C = SZ(in[0]);
 
-  cout << dvar(in[R / 2][C / 2]) << endl;
   assert(in[R / 2][C / 2] == 'S');
   ii s{C / 2, R / 2};
   in[s.se][s.fi] = '.';
@@ -697,56 +698,31 @@ int main() {
     return (abs(p.fi) + abs(p.se)) % 2;
   };
 
+  auto adjust = [&R, &C](ii p, int br, int bc) -> ii {
+    return p + mp(bc * C - C / 2, br * R - R / 2);
+  };
+
   F0R (r, R) F0R (c, C) if (in[r][c] == '.' and not (reachable < mp(c, r))) in[r][c] = '#';
 
   vi cnt(2);
   F0R (r, R) F0R (c, C) if (in[r][c] == '.') ++cnt[parity({c - C / 2, r - R / 2})];
 
-  auto go = [&](ii p, ll n) -> ll {
-    vector<ll> nt(n + 1);
-    queue<ii> q;
-    map<ii, int> seen;
-    q.push(p);
-    seen[p] = 0;
-    while (not q.empty()) {
-      ii c = q.front(); q.pop();
-      if (seen[c] > n) break;
-      ++nt[seen[c]];
-      F0R (i, 4) {
-        ii cc = c + d[i];
-        if (ok(cc) and not seen.count(cc)) {
-          q.push(cc);
-          seen[cc] = seen[c] + 1;
-        }
-      }
-    }
+  auto go = [&](ii p, int n, int br, int bc, int pr) -> ll {
+    assert(ok(p));
     ll sm = 0;
-    for (; n >= 0; n -= 2) {
-      sm += nt[n];
-    }
-    return sm;
-  };
-
-  cout << go(s, 6) << endl;
-  cout << go(s, 64) << endl;
-
-  // steps: 26501365
-
-
-  auto cntinrng = [&](ii p, int n, bool cn) -> int {
-    if (n < 0) return 0;
-    int sm = 0;
-    set<ii> seen; seen += p;
-    queue<pair<ii, int>> q; q.emplace(p, n);
+    queue<pair<ii, int>> q;
+    set<ii> seen;
+    q.emplace(p, n);
+    seen += p;
     while (not q.empty()) {
-      auto [c, dist] = q.front(); q.pop();
-      sm += (n % 2 == dist % 2) == cn;
-      if (dist > 0) {
+      auto [c, dst] = q.front(); q.pop();
+      sm += parity(adjust(c, br, bc)) == pr;
+      if (dst > 0) {
         F0R (i, 4) {
           ii cc = c + d[i];
           if (ok(cc) and not (seen < cc)) {
-            q.emplace(cc, dist - 1);
-            seen += c;
+            q.emplace(cc, dst - 1);
+            seen += cc;
           }
         }
       }
@@ -754,32 +730,43 @@ int main() {
     return sm;
   };
 
-  auto calc = [&](int n) -> ll {
-    ll sm = 0;
-    int bigsteps = (n + R - 1) / R;
-    FOR (br, -bigsteps, bigsteps + 1) {
-      int csteps = bigsteps - abs(br);
-      FOR (bc, -csteps, csteps + 1) {
-        if (abs(br) + abs(bc) < bigsteps - 3) {
-          sm += cnt[1 - parity({br, bc})];
-        } else {
-          assert(abs(bc) + abs(br) > 0);
-          if (bc == 0) {
-            sm += cntinrng({C / 2, br > 0 ? 0 : R} , n - (abs(br) - 1) * R - (R + 1) / 2, 1 - abs(br) % 2);
-          } else {
-            if (br == 0) {
-              sm += cntinrng({bc > 0 ? 0 : C, R / 2} , n - (abs(bc) - 1) * C - (C + 1) / 2, 1 - abs(bc) % 2);
-            } else { // br > 0
-              sm += cntinrng({bc > 0 ? 0 : C, br > 0 ? 0 : R}, n - (abs(bc) - 1) * C - (C + 1) / 2 - (abs(br) - 1) * R - (R + 1) / 2, (abs(br) + abs(bc)) % 2);
-            }
-          }
-        }
-      }
-    }
-    return sm;
+  auto go1 = [&](ii p, int n) -> int {
+    return go(p, n, 0, 0, n % 2);
   };
 
-  cout << calc(26501365) << endl;
+  if (R < 130) {
+    cout << go1(s, 6) << endl;
+    return 0;
+  }
+
+  cout << go1(s, 64) << endl;
+
+  // steps: 26501365, width: 131
+
+  const ll steps = 26501365;
+  assert((steps - R / 2) % R == 0); // blocks: 2023000
+  const ll blocks = (steps - R / 2) / R;
+
+  ll sm = 0;
+
+  // interior
+  sm += cnt[1];
+  for (ll i = 1, n = 4; i < blocks; ++i, n += 4) {
+    sm += n * cnt[1 - i % 2];
+  }
+
+  // tips
+  for (ii p : vii{{0, R / 2}, {C - 1, R / 2}, {C / 2, 0}, {C / 2, R - 1}}) {
+    sm += go(p, C - 1, blocks, 0, steps % 2);
+  }
+
+  // diags
+  for (ii p : vii{{0, 0}, {0, R - 1}, {C - 1, 0}, {C - 1, R - 1}}) {
+    sm += blocks * go(p, R / 2 - 1, blocks, 1, steps % 2);
+    sm += (blocks - 1) * go(p, R + R / 2 - 1, blocks, 0, steps % 2);
+  }
+
+  cout << sm << endl;
 
   return 0;
 }
